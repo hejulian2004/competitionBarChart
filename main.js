@@ -772,15 +772,15 @@
         ) || 40;
 
       return Math.max(
-        MIN_VALUE_LABEL_GUTTER,
+        60,
         Math.min(
-          MAX_VALUE_LABEL_GUTTER,
+          240,
           Math.ceil(
             maximumTextWidth +
             VALUE_ICON_SIZE +
             VALUE_ICON_TEXT_GAP +
             VALUE_BAR_GAP +
-            10
+            16
           )
         )
       );
@@ -1987,7 +1987,7 @@
       );
 
       const valueGutter = getValueLabelGutter();
-      margin.right = Math.max(36, Math.min(180, valueGutter + 16));
+      margin.right = Math.max(65, Math.min(260, valueGutter + 16));
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
@@ -2008,15 +2008,13 @@
         .attr("y", HEIGHT - margin.bottom + 2);
 
       valueLabelClipRect
-        .attr("x", margin.left + 4)
+        .attr("x", CHART_SIDE_PADDING)
         .attr(
           "width",
           Math.max(
             1,
             WIDTH -
-              margin.left -
-              margin.right -
-              8
+              CHART_SIDE_PADDING * 2
           )
         );
 
@@ -2095,9 +2093,9 @@
       );
       const isNegative = value < 0;
 
-      const plotLeft = margin.left + 6;
+      const plotLeft = CHART_SIDE_PADDING + 4;
       const plotRight =
-        WIDTH - margin.right - 6;
+        WIDTH - CHART_SIDE_PADDING - 4;
 
       const availableWidth = Math.max(
         1,
@@ -4101,6 +4099,7 @@
         );
 
       configureXAxisScale([domainMin, domainMax]);
+      const zeroX = xScale(0);
 
       const logicalWidth = WIDTH;
       const logicalHeight = HEIGHT;
@@ -4259,7 +4258,6 @@
         });
 
         // 稳定零轴
-        const zeroX = xScale(0);
         context.beginPath();
         context.strokeStyle = "#475569";
         context.lineWidth = 2;
@@ -4780,15 +4778,19 @@
     }
 
     function getVideoDimensions() {
-      const [width, height] = document
+      const [nominalWidth, height] = document
         .querySelector("#videoResolutionInput")
         .value
         .split("x")
         .map(Number);
 
+      const targetHeight = height || 1080;
+      const calculatedWidth = Math.round(targetHeight * (WIDTH / HEIGHT));
+      const width = (calculatedWidth % 2 === 0) ? calculatedWidth : calculatedWidth + 1;
+
       return {
-        width: width || 1920,
-        height: height || 1080
+        width: width,
+        height: targetHeight
       };
     }
 
@@ -5272,9 +5274,17 @@
       }
     }
 
+    function getGifDimensions() {
+      const height = 540;
+      const calculatedWidth = Math.round(height * (WIDTH / HEIGHT));
+      const width = (calculatedWidth % 2 === 0) ? calculatedWidth : calculatedWidth + 1;
+      return { width, height };
+    }
+
     async function buildGlobalGifPalette(quantize) {
-      const paletteWidth = 480;
+      const { width: currentGifWidth, height: currentGifHeight } = getGifDimensions();
       const paletteHeight = 270;
+      const paletteWidth = Math.round(paletteHeight * (WIDTH / HEIGHT));
       const canvas = document.createElement("canvas");
       canvas.width = paletteWidth;
       canvas.height = paletteHeight;
@@ -5535,9 +5545,10 @@
         let encodedFrames = 0;
         let mergedHoldFrames = 0;
 
+        const { width: currentGifWidth, height: currentGifHeight } = getGifDimensions();
         const canvas = document.createElement("canvas");
-        canvas.width = GIF_WIDTH;
-        canvas.height = GIF_HEIGHT;
+        canvas.width = currentGifWidth;
+        canvas.height = currentGifHeight;
 
         const context = canvas.getContext("2d", {
           alpha: false,
@@ -5599,8 +5610,8 @@
 
           drawDirectCanvasVideoFrame(
             context,
-            GIF_WIDTH,
-            GIF_HEIGHT,
+            currentGifWidth,
+            currentGifHeight,
             fromFrame,
             toFrame,
             easedProgress,
@@ -5610,8 +5621,8 @@
           const rgba = context.getImageData(
             0,
             0,
-            GIF_WIDTH,
-            GIF_HEIGHT
+            currentGifWidth,
+            currentGifHeight
           ).data;
 
           const indexedPixels = applyPalette(
@@ -5633,8 +5644,8 @@
 
           encoder.writeFrame(
             indexedPixels,
-            GIF_WIDTH,
-            GIF_HEIGHT,
+            currentGifWidth,
+            currentGifHeight,
             options
           );
 
@@ -5812,7 +5823,7 @@
 
         setStatus(
           `GIF 已导出：Canvas 直绘，` +
-          `全局调色板，${GIF_WIDTH}×${GIF_HEIGHT}，` +
+          `全局调色板，${currentGifWidth}×${currentGifHeight}，` +
           `${compatibilityName}，${fpsDescription}，` +
           `总时长 ${totalDurationSeconds} 秒，` +
           `编码 ${encodedFrames} 帧，` +
