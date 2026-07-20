@@ -3157,13 +3157,18 @@
       titleAccent
         .attr("x", TITLE_LEFT - 14);
 
+      const yTargetRange = getYScaleTargetRange(categories.length);
+      const cardHeight = Math.min(HEIGHT - margin.top + 30, yTargetRange[1] - margin.top + 78);
+
       plotSurface
         .attr("x", CHART_SIDE_PADDING)
+        .attr("y", margin.top - 42)
         .attr(
           "width",
           WIDTH -
             CHART_SIDE_PADDING * 2
-        );
+        )
+        .attr("height", cardHeight);
 
       timeLabel
         .attr("x", WIDTH - margin.right - 6)
@@ -3193,7 +3198,12 @@
     function getYScaleTargetRange(barCount) {
       const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
       const count = Math.max(1, barCount || 1);
-      const maxStep = MAX_BAR_HEIGHT / 0.84;
+
+      const dynamicMaxBarHeight = HEIGHT > 900
+        ? Math.min(64, Math.max(44, Math.floor(fullAvailableHeight / (count * 1.18))))
+        : MAX_BAR_HEIGHT;
+
+      const maxStep = dynamicMaxBarHeight / 0.84;
       const neededHeight = count * maxStep;
       const targetHeight = Math.min(fullAvailableHeight, neededHeight);
       return [margin.top, margin.top + targetHeight];
@@ -5307,6 +5317,9 @@
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
 
+      const yTargetRange = getYScaleTargetRange(ranking.length);
+      const cardHeight = Math.min(HEIGHT - margin.top + 30, yTargetRange[1] - margin.top + 78);
+
       // 独立图表画布面板
       context.save();
       context.shadowColor = "rgba(51, 65, 85, 0.08)";
@@ -5318,10 +5331,8 @@
         CHART_SIDE_PADDING,
         margin.top - 42,
         logicalWidth -
-          CHART_SIDE_PADDING -
-          margin.right +
-          18,
-        logicalHeight - margin.top - margin.bottom + 60,
+          CHART_SIDE_PADDING * 2,
+        cardHeight,
         19
       );
       context.restore();
@@ -5333,10 +5344,8 @@
         CHART_SIDE_PADDING,
         margin.top - 42,
         logicalWidth -
-          CHART_SIDE_PADDING -
-          margin.right +
-          18,
-        logicalHeight - margin.top - margin.bottom + 60,
+          CHART_SIDE_PADDING * 2,
+        cardHeight,
         19
       );
 
