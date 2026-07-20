@@ -1,27 +1,22 @@
-const WIDTH = 1280;
+    let baseWidth = 1280;
+    let WIDTH = 1280;
     const HEIGHT = 720;
     const BASE_FRAME_DURATION = 1500;
 
-    // 网页和 GIF 共用同一个运动比例及缓动函数。
-    // 每个时间段中，82% 用于运动，18% 用于停留。
     const MOTION_RATIO = 0.82;
     const MOTION_EASING = d3.easeCubicInOut;
 
     const GIF_WIDTH = 960;
     const GIF_HEIGHT = 540;
 
-    // GIF 帧延迟通常按 10ms（百分之一秒）存储。
-    // 用户可输入 1–120 FPS；为保持与 HTML 相同的总时长，
-    // 大多数 GIF 播放器中的可靠有效上限约为 100 FPS。
-    // 左侧名称与柱体之间保留独立间距，避免视觉过于拥挤。
-    const NAME_BAR_GAP = 36;
-    const CHART_SIDE_PADDING = 24;
+    const NAME_BAR_GAP = 12;
+    const CHART_SIDE_PADDING = 16;
     const VALUE_ICON_SIZE = 32;
     const VALUE_ICON_TEXT_GAP = 9;
-    const VALUE_BAR_GAP = 12;
-    const MIN_VALUE_LABEL_GUTTER = 132;
-    const MAX_VALUE_LABEL_GUTTER = 300;
-    const margin = { top: 154, right: 90, bottom: 58, left: 230 };
+    const VALUE_BAR_GAP = 10;
+    const MIN_VALUE_LABEL_GUTTER = 40;
+    const MAX_VALUE_LABEL_GUTTER = 180;
+    const margin = { top: 154, right: 60, bottom: 58, left: 120 };
 
     const sampleRows = [
       ["年份", "Python", "Java", "JavaScript", "C++", "Go", "Kotlin", "Rust", "Swift"],
@@ -785,7 +780,7 @@ const WIDTH = 1280;
             VALUE_ICON_SIZE +
             VALUE_ICON_TEXT_GAP +
             VALUE_BAR_GAP +
-            18
+            10
           )
         )
       );
@@ -803,12 +798,9 @@ const WIDTH = 1280;
 
       const rangeStart = mode === "non-negative"
         ? margin.left
-        : margin.left + valueLabelGutter;
+        : margin.left + Math.min(30, Math.ceil(valueLabelGutter * 0.4));
 
-      const rangeEnd =
-        WIDTH -
-        margin.right -
-        valueLabelGutter;
+      const rangeEnd = WIDTH - margin.right;
 
       if (mode === "smooth-split") {
         const zeroPosition =
@@ -1948,6 +1940,30 @@ const WIDTH = 1280;
     const textMeasureContext =
       textMeasureCanvas.getContext("2d");
 
+    function getChartWidthScale() {
+      const el = document.querySelector("#chartWidthScaleInput");
+      const raw = el ? Number(el.value) : 100;
+      return Number.isFinite(raw) && raw >= 50 && raw <= 250 ? raw : 100;
+    }
+
+    function updateChartWidth() {
+      const scale = getChartWidthScale();
+      WIDTH = Math.round(baseWidth * (scale / 100));
+
+      const label = document.querySelector("#chartWidthScaleValue");
+      if (label) {
+        label.textContent = `${scale}% (${WIDTH}px)`;
+      }
+
+      svg.attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
+        .attr("width", WIDTH);
+
+      if (raceData && raceData.length > 0) {
+        updateResponsiveChartMargins();
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+    }
+
     function updateResponsiveChartMargins() {
       const longestNameWidth = d3.max(
         categories,
@@ -1958,22 +1974,20 @@ const WIDTH = 1280;
         )
       ) || 0;
 
-      /*
-       * 名称短时缩小左侧留白，把更多宽度留给柱体；
-       * 名称较长时自动扩大，但设置上限避免绘图区过窄。
-       */
       margin.left = Math.max(
-        88,
+        78,
         Math.min(
-          280,
+          260,
           Math.ceil(
             longestNameWidth +
             NAME_BAR_GAP +
-            CHART_SIDE_PADDING + 6
+            CHART_SIDE_PADDING + 4
           )
         )
       );
-      margin.right = 52;
+
+      const valueGutter = getValueLabelGutter();
+      margin.right = Math.max(36, Math.min(180, valueGutter + 16));
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
@@ -1986,15 +2000,12 @@ const WIDTH = 1280;
         .attr(
           "width",
           WIDTH -
-            CHART_SIDE_PADDING -
-            margin.right +
-            18
+            CHART_SIDE_PADDING * 2
         );
 
-      timeLabel.attr(
-        "x",
-        WIDTH - margin.right - 10
-      );
+      timeLabel
+        .attr("x", WIDTH - margin.right - 6)
+        .attr("y", HEIGHT - margin.bottom + 2);
 
       valueLabelClipRect
         .attr("x", margin.left + 4)
@@ -2013,6 +2024,8 @@ const WIDTH = 1280;
         margin.left,
         WIDTH - margin.right
       ]);
+
+      yScale.range(getYScaleTargetRange(categories.length));
     }
 
     const MAX_BAR_HEIGHT = 44;
@@ -6077,10 +6090,13 @@ const WIDTH = 1280;
     document.querySelector("#exitFullscreenButton")
       .addEventListener("click", () => document.exitFullscreen?.());
 
+    document.querySelector("#chartWidthScaleInput")
+      ?.addEventListener("input", updateChartWidth);
+
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
-      "speedInput", "gifFpsInput", "gifCompatibilityInput",
+      "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput",
       "valueStepInput", "unitInput"
     ];
