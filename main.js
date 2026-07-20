@@ -2088,15 +2088,9 @@
     function getYScaleTargetRange(barCount) {
       const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
       const count = Math.max(1, barCount || 1);
-
-      const dynamicMaxBarHeight = Math.min(
-        72,
-        Math.max(40, Math.floor((fullAvailableHeight * 0.92) / (count * 1.15)))
-      );
-
-      const maxStep = dynamicMaxBarHeight / 0.84;
+      const maxStep = MAX_BAR_HEIGHT / 0.84;
       const neededHeight = count * maxStep;
-      const targetHeight = Math.min(fullAvailableHeight, Math.max(fullAvailableHeight * 0.82, neededHeight));
+      const targetHeight = Math.min(fullAvailableHeight, neededHeight);
       return [margin.top, margin.top + targetHeight];
     }
 
