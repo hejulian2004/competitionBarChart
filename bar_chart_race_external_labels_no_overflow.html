@@ -762,6 +762,55 @@
       }
     }
 
+    .danmaku-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 20px;
+      padding: 4px 10px 4px 10px;
+      font-size: 12.5px;
+      color: #334155;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: transform 120ms ease;
+    }
+
+    .danmaku-item:hover {
+      transform: translateY(-1px);
+      border-color: #94a3b8;
+    }
+
+    .danmaku-item .danmaku-time {
+      font-weight: 800;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 11.5px;
+    }
+
+    .danmaku-item .danmaku-text {
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .danmaku-item .danmaku-remove {
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 0 2px;
+      font-weight: bold;
+      font-size: 14px;
+      line-height: 1;
+      transition: color 120ms ease;
+    }
+
+    .danmaku-item .danmaku-remove:hover {
+      color: #ef4444;
+    }
+
 </style>
 </head>
 
@@ -888,12 +937,28 @@
         </div>
       </div>
 
-<div class="color-settings">
+      <div class="color-settings">
         <div class="color-settings-header">
           <div class="color-settings-title">主体颜色与图标（点击圆形区域上传图片）</div>
           <button id="resetColorsButton" type="button">恢复自动配色</button>
         </div>
         <div id="colorControls" class="color-controls"></div>
+      </div>
+
+      <div class="color-settings" style="margin-top: 14px;">
+        <div class="color-settings-header">
+          <div class="color-settings-title">时间节点解说弹幕（在特定时间点浮现字幕卡片）</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
+            <input id="showDanmakuInput" type="checkbox" checked />
+            启用解说/弹幕显示
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns: 150px 1fr auto;gap: 10px;align-items: center;margin-bottom: 10px;">
+          <select id="danmakuTimeSelect"></select>
+          <input id="danmakuTextInput" type="text" placeholder="输入要在该时间点显示的解说文字，如：Python 首次登顶！" />
+          <button id="addDanmakuButton" class="primary" type="button" style="padding: 9px 16px;">添加解说</button>
+        </div>
+        <div id="danmakuList" class="danmaku-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:140px;overflow-y:auto;"></div>
       </div>
 
       <details class="hint-details">
@@ -1201,6 +1266,93 @@ const WIDTH = 1280;
       .attr("x", WIDTH - margin.right)
       .attr("y", HEIGHT - margin.bottom + 2)
       .attr("text-anchor", "end");
+
+    const danmakuMap = new Map();
+    const danmakuGroup = svg.append("g").attr("class", "danmaku-group");
+
+    function isDanmakuEnabled() {
+      const el = document.querySelector("#showDanmakuInput");
+      return el ? el.checked : true;
+    }
+
+    function updateDanmakuTimeSelect() {
+      const select = document.querySelector("#danmakuTimeSelect");
+      if (!select) return;
+      select.replaceChildren();
+
+      const timeNodes = raceData.map(f => f.time);
+      timeNodes.forEach(t => {
+        const option = document.createElement("option");
+        option.value = t;
+        option.textContent = t;
+        select.appendChild(option);
+      });
+    }
+
+    function renderDanmakuList() {
+      const container = document.querySelector("#danmakuList");
+      if (!container) return;
+      container.replaceChildren();
+
+      if (danmakuMap.size === 0) {
+        const empty = document.createElement("span");
+        empty.style.color = "#94a3b8";
+        empty.style.fontSize = "12.5px";
+        empty.textContent = "尚未添加任何时间节点解说。";
+        container.appendChild(empty);
+        return;
+      }
+
+      danmakuMap.forEach((text, time) => {
+        const item = document.createElement("div");
+        item.className = "danmaku-item";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "danmaku-time";
+        timeSpan.textContent = time;
+
+        const textSpan = document.createElement("span");
+        textSpan.className = "danmaku-text";
+        textSpan.textContent = text;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "danmaku-remove";
+        removeBtn.textContent = "✕";
+        removeBtn.title = "删除此条解说";
+        removeBtn.onclick = () => removeDanmaku(time);
+
+        item.append(timeSpan, textSpan, removeBtn);
+        container.appendChild(item);
+      });
+    }
+
+    function addDanmaku() {
+      const timeSelect = document.querySelector("#danmakuTimeSelect");
+      const textInput = document.querySelector("#danmakuTextInput");
+      if (!timeSelect || !textInput) return;
+
+      const time = timeSelect.value;
+      const text = textInput.value.trim();
+      if (!time || !text) {
+        setStatus("请选择时间节点并输入解说文字！", true);
+        return;
+      }
+
+      danmakuMap.set(time, text);
+      textInput.value = "";
+      renderDanmakuList();
+      saveAppState();
+      renderFrame(raceData[currentFrameIndex], false);
+      setStatus(`已为【${time}】添加解说：“${text}”。`);
+    }
+
+    function removeDanmaku(time) {
+      danmakuMap.delete(time);
+      renderDanmakuList();
+      saveAppState();
+      renderFrame(raceData[currentFrameIndex], false);
+      setStatus(`已移除【${time}】的解说。`);
+    }
 
     let xScale = d3.scaleLinear()
       .range([margin.left, WIDTH - margin.right]);
@@ -2804,11 +2956,17 @@ const WIDTH = 1280;
         margin.left,
         WIDTH - margin.right
       ]);
+    }
 
-      yScale.range([
-        margin.top,
-        HEIGHT - margin.bottom
-      ]);
+    const MAX_BAR_HEIGHT = 44;
+
+    function getYScaleTargetRange(barCount) {
+      const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
+      const count = Math.max(1, barCount || 1);
+      const maxStep = MAX_BAR_HEIGHT / 0.84;
+      const neededHeight = count * maxStep;
+      const targetHeight = Math.min(fullAvailableHeight, neededHeight);
+      return [margin.top, margin.top + targetHeight];
     }
 
     function measureLogicalText(
@@ -3356,6 +3514,7 @@ const WIDTH = 1280;
       }
 
       configureXAxisScale([domainMin, domainMax]);
+      yScale.range(getYScaleTargetRange(ranking.length));
       yScale.domain(ranking.map(d => d.name));
 
       const duration = animate
@@ -3898,6 +4057,54 @@ const WIDTH = 1280;
         .text(d => `#${d.rank}`);
 
       ranks.exit().transition(transition).style("opacity", 0).remove();
+
+      if (isDanmakuEnabled() && danmakuMap.has(frame.time)) {
+        const text = danmakuMap.get(frame.time);
+        danmakuGroup.style("display", null);
+        danmakuGroup.selectAll("*").remove();
+
+        const cardX = 720;
+        const cardY = 36;
+        const cardWidth = 440;
+        const cardHeight = 60;
+
+        danmakuGroup.append("rect")
+          .attr("x", cardX)
+          .attr("y", cardY)
+          .attr("width", cardWidth)
+          .attr("height", cardHeight)
+          .attr("rx", 13)
+          .attr("fill", "rgba(255, 255, 255, 0.95)")
+          .attr("stroke", "#2563eb")
+          .attr("stroke-width", 1.5)
+          .attr("filter", "url(#surfaceShadow)");
+
+        danmakuGroup.append("rect")
+          .attr("x", cardX + 12)
+          .attr("y", cardY + 11)
+          .attr("width", 5)
+          .attr("height", cardHeight - 22)
+          .attr("rx", 2.5)
+          .attr("fill", "#2563eb");
+
+        danmakuGroup.append("text")
+          .attr("x", cardX + 26)
+          .attr("y", cardY + 24)
+          .attr("font-size", 12)
+          .attr("font-weight", 700)
+          .attr("fill", "#2563eb")
+          .text(`📌 ${frame.time}`);
+
+        danmakuGroup.append("text")
+          .attr("x", cardX + 26)
+          .attr("y", cardY + 45)
+          .attr("font-size", 14.5)
+          .attr("font-weight", 800)
+          .attr("fill", "#0f172a")
+          .text(text);
+      } else {
+        danmakuGroup.style("display", "none");
+      }
     }
 
     function updatePreviewTable() {
@@ -3936,7 +4143,7 @@ const WIDTH = 1280;
       try {
         const inputIds = [
           "titleInput", "subtitleInput", "barsInput", "showZeroInput",
-          "enableGradientInput", "xAxisModeInput", "valueScaleInput",
+          "enableGradientInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
           "speedInput", "gifFpsInput", "gifCompatibilityInput",
           "videoFormatInput", "videoFpsInput", "videoResolutionInput",
           "valueStepInput", "unitInput"
@@ -3955,6 +4162,7 @@ const WIDTH = 1280;
           inputs: inputsState,
           customColors: Array.from(customColors.entries()),
           customIcons: Array.from(customIcons.entries()),
+          danmaku: Array.from(danmakuMap.entries()),
           savedAt: Date.now()
         };
 
@@ -3981,6 +4189,11 @@ const WIDTH = 1280;
           state.customIcons.forEach(([name, val]) => customIcons.set(name, val));
         }
 
+        danmakuMap.clear();
+        if (Array.isArray(state.danmaku)) {
+          state.danmaku.forEach(([t, text]) => danmakuMap.set(t, text));
+        }
+
         if (state.inputs) {
           Object.entries(state.inputs).forEach(([id, val]) => {
             const el = document.querySelector(`#${id}`);
@@ -4000,6 +4213,8 @@ const WIDTH = 1280;
         updatePreviewTable();
         refreshColorScale();
         renderColorControls();
+        updateDanmakuTimeSelect();
+        renderDanmakuList();
         syncProgress(0);
         renderFrame(raceData[0], false);
         setStatus("已成功为您自动恢复上次编辑的数据和配置！");
@@ -4017,6 +4232,8 @@ const WIDTH = 1280;
       currentFrameIndex = 0;
       updatePreviewTable();
       renderColorControls();
+      updateDanmakuTimeSelect();
+      renderDanmakuList();
       syncProgress(0);
       renderFrame(raceData[0], false);
       saveAppState();
@@ -4960,10 +5177,7 @@ const WIDTH = 1280;
 
       const yBand = d3.scaleBand()
         .domain(ranking.map(item => item.name))
-        .range([
-          margin.top,
-          logicalHeight - margin.bottom
-        ])
+        .range(getYScaleTargetRange(ranking.length))
         .padding(0.16);
 
       const fromRanks = getAllRankMap(fromFrame);
@@ -5216,6 +5430,39 @@ const WIDTH = 1280;
         logicalHeight - margin.bottom - 16
       );
       context.restore();
+
+      if (isDanmakuEnabled() && danmakuMap.has(frame.time)) {
+        const text = danmakuMap.get(frame.time);
+        const cardX = 720;
+        const cardY = 36;
+        const cardWidth = 440;
+        const cardHeight = 60;
+
+        context.save();
+        context.shadowColor = "rgba(30, 41, 59, 0.12)";
+        context.shadowBlur = 10;
+        context.shadowOffsetY = 4;
+        context.fillStyle = "rgba(255, 255, 255, 0.96)";
+        context.strokeStyle = "#2563eb";
+        context.lineWidth = 1.5;
+
+        fillRoundedRect(context, cardX, cardY, cardWidth, cardHeight, 13);
+        context.stroke();
+        context.restore();
+
+        context.save();
+        context.fillStyle = "#2563eb";
+        fillRoundedRect(context, cardX + 12, cardY + 11, 5, cardHeight - 22, 2.5);
+
+        context.fillStyle = "#2563eb";
+        context.font = '700 12px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+        context.fillText(`📌 ${frame.time}`, cardX + 26, cardY + 24);
+
+        context.fillStyle = "#0f172a";
+        context.font = '800 14.5px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+        context.fillText(text, cardX + 26, cardY + 45);
+        context.restore();
+      }
 
       context.restore();
       context.setTransform(1, 0, 0, 1, 0, 0);
@@ -6721,7 +6968,7 @@ const WIDTH = 1280;
 
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
-      "enableGradientInput", "xAxisModeInput", "valueScaleInput",
+      "enableGradientInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput",
       "valueStepInput", "unitInput"
@@ -6748,6 +6995,24 @@ const WIDTH = 1280;
         event.returnValue = "正在播放动画，确定要离开吗？";
       }
     });
+
+    document.querySelector("#addDanmakuButton")
+      ?.addEventListener("click", addDanmaku);
+
+    document.querySelector("#danmakuTextInput")
+      ?.addEventListener("keydown", event => {
+        if (event.key === "Enter") addDanmaku();
+      });
+
+    document.querySelector("#showDanmakuInput")
+      ?.addEventListener("change", event => {
+        renderFrame(raceData[currentFrameIndex], false);
+        setStatus(
+          event.target.checked
+            ? "已开启时间节点解说弹幕显示。"
+            : "已关闭时间节点解说弹幕显示。"
+        );
+      });
 
     updateSpeedLabel();
     if (!loadAppState()) {

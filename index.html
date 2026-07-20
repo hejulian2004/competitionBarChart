@@ -137,12 +137,28 @@
         </div>
       </div>
 
-<div class="color-settings">
+      <div class="color-settings">
         <div class="color-settings-header">
           <div class="color-settings-title">主体颜色与图标（点击圆形区域上传图片）</div>
           <button id="resetColorsButton" type="button">恢复自动配色</button>
         </div>
         <div id="colorControls" class="color-controls"></div>
+      </div>
+
+      <div class="color-settings" style="margin-top: 14px;">
+        <div class="color-settings-header">
+          <div class="color-settings-title">时间节点解说弹幕（在特定时间点浮现字幕卡片）</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
+            <input id="showDanmakuInput" type="checkbox" checked />
+            启用解说/弹幕显示
+          </label>
+        </div>
+        <div style="display:grid;grid-template-columns: 150px 1fr auto;gap: 10px;align-items: center;margin-bottom: 10px;">
+          <select id="danmakuTimeSelect"></select>
+          <input id="danmakuTextInput" type="text" placeholder="输入要在该时间点显示的解说文字，如：Python 首次登顶！" />
+          <button id="addDanmakuButton" class="primary" type="button" style="padding: 9px 16px;">添加解说</button>
+        </div>
+        <div id="danmakuList" class="danmaku-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:140px;overflow-y:auto;"></div>
       </div>
 
       <details class="hint-details">
