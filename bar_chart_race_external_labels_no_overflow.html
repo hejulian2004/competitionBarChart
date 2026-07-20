@@ -4336,55 +4336,32 @@
         const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
         const isPortrait = WIDTH < 960;
 
-        const cardWidth = (isPortrait || !hasTitle)
-          ? Math.max(280, WIDTH - CHART_SIDE_PADDING * 2 - 20)
-          : Math.min(640, Math.max(300, WIDTH - TITLE_LEFT - 240));
+        const startX = (isPortrait || !hasTitle)
+          ? TITLE_LEFT
+          : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - 520);
 
-        const cardX = (isPortrait || !hasTitle)
-          ? CHART_SIDE_PADDING + 10
-          : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - cardWidth - 10);
-
-        const cardY = margin.top - 58;
-        const cardHeight = 54;
-
-        danmakuGroup.append("rect")
-          .attr("x", cardX)
-          .attr("y", cardY)
-          .attr("width", cardWidth)
-          .attr("height", cardHeight)
-          .attr("rx", 12)
-          .attr("fill", "rgba(255, 255, 255, 0.96)")
-          .attr("stroke", "#2563eb")
-          .attr("stroke-width", 1.5)
-          .attr("filter", "url(#surfaceShadow)");
-
-        danmakuGroup.append("rect")
-          .attr("x", cardX + 12)
-          .attr("y", cardY + 10)
-          .attr("width", 5)
-          .attr("height", cardHeight - 20)
-          .attr("rx", 2.5)
-          .attr("fill", "#2563eb");
+        const startY = margin.top - 54;
 
         danmakuGroup.append("text")
-          .attr("x", cardX + 24)
-          .attr("y", cardY + 20)
+          .attr("x", startX)
+          .attr("y", startY + 16)
           .attr("font-size", 13)
           .attr("font-weight", 700)
           .attr("fill", "#2563eb")
           .text(`📌 ${frameKey}`);
 
         const textEl = danmakuGroup.append("text")
-          .attr("x", cardX + 24)
-          .attr("y", cardY + 43)
+          .attr("x", startX)
+          .attr("y", startY + 40)
           .attr("font-size", 18)
           .attr("font-weight", 800)
           .attr("fill", "#0f172a")
           .text(text);
 
         const textWidth = measureLogicalText(text, 18, 800);
-        if (textWidth > cardWidth - 36) {
-          textEl.attr("textLength", cardWidth - 36).attr("lengthAdjust", "spacingAndGlyphs");
+        const maxW = WIDTH - startX - CHART_SIDE_PADDING - 10;
+        if (textWidth > maxW) {
+          textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
         }
       } else {
         danmakuGroup.selectAll("*").remove();
@@ -5728,45 +5705,23 @@
         const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
         const isPortrait = WIDTH < 960;
 
-        const cardWidth = (isPortrait || !hasTitle)
-          ? Math.max(280, WIDTH - CHART_SIDE_PADDING * 2 - 20)
-          : Math.min(640, Math.max(300, WIDTH - TITLE_LEFT - 240));
+        const startX = (isPortrait || !hasTitle)
+          ? TITLE_LEFT
+          : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - 520);
 
-        const cardX = (isPortrait || !hasTitle)
-          ? CHART_SIDE_PADDING + 10
-          : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - cardWidth - 10);
-
-        const cardY = margin.top - 58;
-        const cardHeight = 54;
+        const startY = margin.top - 54;
 
         context.save();
         context.textBaseline = "top";
 
-        context.save();
-        context.shadowColor = "rgba(30, 41, 59, 0.10)";
-        context.shadowBlur = 8;
-        context.shadowOffsetY = 3;
-        context.fillStyle = "rgba(255, 255, 255, 0.96)";
-        context.strokeStyle = "#2563eb";
-        context.lineWidth = 1.5;
-
-        fillRoundedRect(context, cardX, cardY, cardWidth, cardHeight, 12);
-        context.stroke();
-        context.restore();
-
-        context.save();
-        context.fillStyle = "#2563eb";
-        fillRoundedRect(context, cardX + 12, cardY + 10, 5, cardHeight - 20, 2.5);
-        context.restore();
-
         context.fillStyle = "#2563eb";
         context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(`📌 ${frameKey}`, cardX + 24, cardY + 7);
+        context.fillText(`📌 ${frameKey}`, startX, startY);
 
-        const maxTextW = Math.max(120, cardWidth - 36);
+        const maxTextW = Math.max(120, WIDTH - startX - CHART_SIDE_PADDING - 10);
         context.fillStyle = "#0f172a";
         context.font = '800 18px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(text, cardX + 24, cardY + 26, maxTextW);
+        context.fillText(text, startX, startY + 22, maxTextW);
 
         context.restore();
       }
