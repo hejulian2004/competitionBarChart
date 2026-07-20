@@ -1331,6 +1331,10 @@
       return el ? el.checked : true;
     }
 
+    function getDanmakuKey(t) {
+      return String(t ?? "").trim();
+    }
+
     function shouldShowXAxis() {
       const el = document.querySelector("#showXAxisInput");
       return el ? el.checked : true;
@@ -1344,8 +1348,9 @@
       const timeNodes = raceData.map(f => f.time);
       timeNodes.forEach(t => {
         const option = document.createElement("option");
-        option.value = t;
-        option.textContent = t;
+        const k = getDanmakuKey(t);
+        option.value = k;
+        option.textContent = k;
         select.appendChild(option);
       });
 
@@ -1358,7 +1363,7 @@
       const textInput = document.querySelector("#danmakuTextInput");
       if (!timeSelect || !addBtn) return;
 
-      const currentTime = timeSelect.value;
+      const currentTime = getDanmakuKey(timeSelect.value);
       if (danmakuMap.has(currentTime)) {
         addBtn.textContent = "更新解说";
         addBtn.classList.add("primary");
@@ -1373,13 +1378,14 @@
       const textInput = document.querySelector("#danmakuTextInput");
       if (!timeSelect || !textInput) return;
 
-      timeSelect.value = time;
-      if (danmakuMap.has(time)) {
-        textInput.value = danmakuMap.get(time);
+      const key = getDanmakuKey(time);
+      timeSelect.value = key;
+      if (danmakuMap.has(key)) {
+        textInput.value = danmakuMap.get(key);
       }
       textInput.focus();
       updateDanmakuFormState();
-      setStatus(`已将【${time}】的解说内容载入输入框，修改后点击“更新解说”即可保存。`);
+      setStatus(`已将【${key}】的解说内容载入输入框，修改后点击“更新解说”即可保存。`);
     }
 
     function renderDanmakuList() {
@@ -1442,28 +1448,31 @@
       const textInput = document.querySelector("#danmakuTextInput");
       if (!timeSelect || !textInput) return;
 
-      const time = timeSelect.value;
+      const key = getDanmakuKey(timeSelect.value);
       const text = textInput.value.trim();
-      if (!time || !text) {
+      if (!key || !text) {
         setStatus("请选择时间节点并输入解说文字！", true);
         return;
       }
 
-      const isUpdate = danmakuMap.has(time);
-      danmakuMap.set(time, text);
+      const isUpdate = danmakuMap.has(key);
+      danmakuMap.set(key, text);
       textInput.value = "";
       renderDanmakuList();
       saveAppState();
+      updateResponsiveChartMargins();
       renderFrame(raceData[currentFrameIndex], false);
-      setStatus(isUpdate ? `已更新【${time}】的解说为：“${text}”。` : `已为【${time}】添加解说：“${text}”。`);
+      setStatus(isUpdate ? `已更新【${key}】的解说为：“${text}”。` : `已为【${key}】添加解说：“${text}”。`);
     }
 
     function removeDanmaku(time) {
-      danmakuMap.delete(time);
+      const key = getDanmakuKey(time);
+      danmakuMap.delete(key);
       renderDanmakuList();
       saveAppState();
+      updateResponsiveChartMargins();
       renderFrame(raceData[currentFrameIndex], false);
-      setStatus(`已移除【${time}】的解说。`);
+      setStatus(`已移除【${key}】的解说。`);
     }
 
     let xScale = d3.scaleLinear()
@@ -3143,19 +3152,19 @@
 
       if (!hasTitle && !hasSubtitle) {
         if (hasDanmaku) {
-          margin.top = 92;
+          margin.top = 114;
         } else {
           margin.top = 58;
         }
       } else if (hasTitle && !hasSubtitle) {
-        if (isPortrait && hasDanmaku) {
-          margin.top = 160;
+        if (hasDanmaku) {
+          margin.top = isPortrait ? 160 : 148;
         } else {
           margin.top = 118;
         }
       } else {
-        if (isPortrait && hasDanmaku) {
-          margin.top = 188;
+        if (hasDanmaku) {
+          margin.top = isPortrait ? 188 : 154;
         } else {
           margin.top = 154;
         }
@@ -4326,8 +4335,9 @@
 
       ranks.exit().transition(transition).style("opacity", 0).remove();
 
-      if (isDanmakuEnabled() && danmakuMap.has(frame.time)) {
-        const text = danmakuMap.get(frame.time);
+      const frameKey = getDanmakuKey(frame.time);
+      if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
+        const text = danmakuMap.get(frameKey);
         danmakuGroup.style("display", null);
         danmakuGroup.selectAll("*").remove();
 
@@ -4376,7 +4386,7 @@
             .attr("font-size", 12)
             .attr("font-weight", 700)
             .attr("fill", "#2563eb")
-            .text(`📌 ${frame.time}`);
+            .text(`📌 ${frameKey}`);
 
           const textEl = danmakuGroup.append("text")
             .attr("x", cardX + 26)
@@ -4392,25 +4402,32 @@
           }
         } else {
           const startX = TITLE_LEFT;
-          const startY = 34;
+          const startY = 24;
 
           danmakuGroup.append("text")
             .attr("x", startX)
-            .attr("y", startY + 8)
+            .attr("y", startY + 10)
             .attr("font-size", 13)
             .attr("font-weight", 700)
             .attr("fill", "#2563eb")
-            .text(`📌 ${frame.time}`);
+            .text(`📌 ${frameKey}`);
 
-          danmakuGroup.append("text")
+          const textEl = danmakuGroup.append("text")
             .attr("x", startX)
             .attr("y", startY + 34)
             .attr("font-size", 16)
             .attr("font-weight", 800)
             .attr("fill", "#0f172a")
             .text(text);
+
+          const textWidth = measureLogicalText(text, 16, 800);
+          const maxW = WIDTH - TITLE_LEFT - CHART_SIDE_PADDING - 10;
+          if (textWidth > maxW) {
+            textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
+          }
         }
       } else {
+        danmakuGroup.selectAll("*").remove();
         danmakuGroup.style("display", "none");
       }
     }
@@ -5748,8 +5765,9 @@
       );
       context.restore();
 
-      if (isDanmakuEnabled() && danmakuMap.has(frame.time)) {
-        const text = danmakuMap.get(frame.time);
+      const frameKey = getDanmakuKey(frame.time);
+      if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
+        const text = danmakuMap.get(frameKey);
         const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
 
         if (hasTitle) {
@@ -5788,7 +5806,7 @@
 
           context.fillStyle = "#2563eb";
           context.font = '700 12px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          context.fillText(`📌 ${frame.time}`, cardX + 26, cardY + 22);
+          context.fillText(`📌 ${frameKey}`, cardX + 26, cardY + 22);
 
           context.fillStyle = "#0f172a";
           context.font = '800 15px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
@@ -5796,16 +5814,16 @@
           context.restore();
         } else {
           const startX = TITLE_LEFT;
-          const startY = 34;
+          const startY = 24;
 
           context.save();
           context.fillStyle = "#2563eb";
           context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          context.fillText(`📌 ${frame.time}`, startX, startY + 8);
+          context.fillText(`📌 ${frameKey}`, startX, startY + 10);
 
           context.fillStyle = "#0f172a";
           context.font = '800 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          context.fillText(text, startX, startY + 34);
+          context.fillText(text, startX, startY + 34, WIDTH - TITLE_LEFT - CHART_SIDE_PADDING - 10);
           context.restore();
         }
       }
