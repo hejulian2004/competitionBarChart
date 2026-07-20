@@ -2556,8 +2556,12 @@ const WIDTH = 1280;
           frame
         );
 
-      titleLabel.text(document.querySelector("#titleInput").value.trim() || "条形竞赛图");
-      subtitleLabel.text(document.querySelector("#subtitleInput").value.trim());
+      const titleText = document.querySelector("#titleInput").value.trim();
+      const subtitleText = document.querySelector("#subtitleInput").value.trim();
+
+      titleLabel.text(titleText);
+      subtitleLabel.text(subtitleText);
+      titleAccent.style("display", titleText ? null : "none");
       timeLabel.text(frame.time);
 
       const dataFrameIndex = raceData.indexOf(frame);
@@ -4116,37 +4120,43 @@ const WIDTH = 1280;
         19
       );
 
-      // 标题前的强调色竖线
-      context.fillStyle = "#2563eb";
-      fillRoundedRect(
-        context,
-        TITLE_LEFT - 14,
-        34,
-        5,
-        31,
-        2.5
-      );
+      const titleText = document.querySelector("#titleInput").value.trim();
+      const subtitleText = document.querySelector("#subtitleInput").value.trim();
 
-      // 标题
-      context.fillStyle = "#14213a";
-      context.font =
-        '850 36px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
-      context.textAlign = "left";
-      context.fillText(
-        document.querySelector("#titleInput").value.trim() ||
-          "条形竞赛图",
-        TITLE_LEFT,
-        55
-      );
+      if (titleText) {
+        // 标题前的强调色竖线
+        context.fillStyle = "#2563eb";
+        fillRoundedRect(
+          context,
+          TITLE_LEFT - 14,
+          34,
+          5,
+          31,
+          2.5
+        );
 
-      context.fillStyle = "#64748b";
-      context.font =
-        '550 15px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
-      context.fillText(
-        document.querySelector("#subtitleInput").value.trim(),
-        TITLE_LEFT,
-        88
-      );
+        // 标题
+        context.fillStyle = "#14213a";
+        context.font =
+          '850 36px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        context.textAlign = "left";
+        context.fillText(
+          titleText,
+          TITLE_LEFT,
+          55
+        );
+      }
+
+      if (subtitleText) {
+        context.fillStyle = "#64748b";
+        context.font =
+          '550 15px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        context.fillText(
+          subtitleText,
+          TITLE_LEFT,
+          88
+        );
+      }
 
       // 横轴、网格和刻度
       const axisLayout = getAxisTickLayout();
@@ -4461,7 +4471,7 @@ const WIDTH = 1280;
 
       // 时间标签
       context.save();
-      context.globalAlpha = 0.075;
+      context.globalAlpha = 0.20;
       context.fillStyle = "#2563eb";
       context.font =
         '900 104px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
