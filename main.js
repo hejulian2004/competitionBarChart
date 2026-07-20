@@ -193,6 +193,11 @@ const WIDTH = 1280;
       return el ? el.checked : true;
     }
 
+    function shouldShowXAxis() {
+      const el = document.querySelector("#showXAxisInput");
+      return el ? el.checked : true;
+    }
+
     function updateDanmakuTimeSelect() {
       const select = document.querySelector("#danmakuTimeSelect");
       if (!select) return;
@@ -2605,19 +2610,26 @@ const WIDTH = 1280;
        * 横轴即时重绘，避免刻度文本在 transition 中重叠。
        * 密集刻度会自动抽稀，并在必要时向左倾斜 35°。
        */
-      xAxisGroup
-        .interrupt()
-        .call(axis);
+      if (shouldShowXAxis()) {
+        xAxisGroup
+          .style("display", null)
+          .interrupt()
+          .call(axis);
 
-      styleSvgAxisTicks(axisLayout);
+        styleSvgAxisTicks(axisLayout);
 
-      zeroLine
-        .interrupt()
-        .attr("x1", xScale(0))
-        .attr("x2", xScale(0))
-        .attr("y1", margin.top)
-        .attr("y2", HEIGHT - margin.bottom)
-        .style("opacity", zeroLineOpacity);
+        zeroLine
+          .style("display", null)
+          .interrupt()
+          .attr("x1", xScale(0))
+          .attr("x2", xScale(0))
+          .attr("y1", margin.top)
+          .attr("y2", HEIGHT - margin.bottom)
+          .style("opacity", zeroLineOpacity);
+      } else {
+        xAxisGroup.style("display", "none");
+        zeroLine.style("display", "none");
+      }
 
       const bottomY = HEIGHT - margin.bottom + 20;
 
@@ -3109,45 +3121,68 @@ const WIDTH = 1280;
         danmakuGroup.style("display", null);
         danmakuGroup.selectAll("*").remove();
 
-        const cardX = 580;
-        const cardY = 32;
-        const cardWidth = 640;
-        const cardHeight = 64;
+        const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
 
-        danmakuGroup.append("rect")
-          .attr("x", cardX)
-          .attr("y", cardY)
-          .attr("width", cardWidth)
-          .attr("height", cardHeight)
-          .attr("rx", 13)
-          .attr("fill", "rgba(255, 255, 255, 0.95)")
-          .attr("stroke", "#2563eb")
-          .attr("stroke-width", 1.5)
-          .attr("filter", "url(#surfaceShadow)");
+        if (hasTitle) {
+          const cardX = 580;
+          const cardY = 32;
+          const cardWidth = 640;
+          const cardHeight = 64;
 
-        danmakuGroup.append("rect")
-          .attr("x", cardX + 12)
-          .attr("y", cardY + 11)
-          .attr("width", 5)
-          .attr("height", cardHeight - 22)
-          .attr("rx", 2.5)
-          .attr("fill", "#2563eb");
+          danmakuGroup.append("rect")
+            .attr("x", cardX)
+            .attr("y", cardY)
+            .attr("width", cardWidth)
+            .attr("height", cardHeight)
+            .attr("rx", 13)
+            .attr("fill", "rgba(255, 255, 255, 0.95)")
+            .attr("stroke", "#2563eb")
+            .attr("stroke-width", 1.5)
+            .attr("filter", "url(#surfaceShadow)");
 
-        danmakuGroup.append("text")
-          .attr("x", cardX + 26)
-          .attr("y", cardY + 24)
-          .attr("font-size", 12)
-          .attr("font-weight", 700)
-          .attr("fill", "#2563eb")
-          .text(`📌 ${frame.time}`);
+          danmakuGroup.append("rect")
+            .attr("x", cardX + 12)
+            .attr("y", cardY + 11)
+            .attr("width", 5)
+            .attr("height", cardHeight - 22)
+            .attr("rx", 2.5)
+            .attr("fill", "#2563eb");
 
-        danmakuGroup.append("text")
-          .attr("x", cardX + 26)
-          .attr("y", cardY + 47)
-          .attr("font-size", 15)
-          .attr("font-weight", 800)
-          .attr("fill", "#0f172a")
-          .text(text);
+          danmakuGroup.append("text")
+            .attr("x", cardX + 26)
+            .attr("y", cardY + 24)
+            .attr("font-size", 12)
+            .attr("font-weight", 700)
+            .attr("fill", "#2563eb")
+            .text(`📌 ${frame.time}`);
+
+          danmakuGroup.append("text")
+            .attr("x", cardX + 26)
+            .attr("y", cardY + 47)
+            .attr("font-size", 15)
+            .attr("font-weight", 800)
+            .attr("fill", "#0f172a")
+            .text(text);
+        } else {
+          const startX = TITLE_LEFT;
+          const startY = 34;
+
+          danmakuGroup.append("text")
+            .attr("x", startX)
+            .attr("y", startY + 8)
+            .attr("font-size", 13)
+            .attr("font-weight", 700)
+            .attr("fill", "#2563eb")
+            .text(`📌 ${frame.time}`);
+
+          danmakuGroup.append("text")
+            .attr("x", startX)
+            .attr("y", startY + 34)
+            .attr("font-size", 16)
+            .attr("font-weight", 800)
+            .attr("fill", "#0f172a")
+            .text(text);
+        }
       } else {
         danmakuGroup.style("display", "none");
       }
@@ -4158,74 +4193,76 @@ const WIDTH = 1280;
         );
       }
 
-      // 横轴、网格和刻度
-      const axisLayout = getAxisTickLayout();
-      const ticks = axisLayout.ticks;
+      if (shouldShowXAxis()) {
+        // 横轴、网格和刻度
+        const axisLayout = getAxisTickLayout();
+        const ticks = axisLayout.ticks;
 
-      context.font =
-        '400 14px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        context.font =
+          '400 14px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
 
-      ticks.forEach(tick => {
-        const x = xScale(tick);
+        ticks.forEach(tick => {
+          const x = xScale(tick);
 
+          context.beginPath();
+          context.strokeStyle = "#dbe5f0";
+          context.lineWidth = 1;
+          context.setLineDash([3, 6]);
+          context.moveTo(x, margin.top);
+          context.lineTo(
+            x,
+            logicalHeight - margin.bottom
+          );
+          context.stroke();
+
+          context.setLineDash([]);
+          context.fillStyle = "#64748b";
+
+          if (axisLayout.rotate) {
+            context.save();
+            context.translate(
+              x - 3,
+              margin.top - 14
+            );
+            context.rotate(
+              axisLayout.angle *
+              Math.PI / 180
+            );
+            context.textAlign = "right";
+            context.fillText(
+              formatAxisTick(tick),
+              0,
+              0
+            );
+            context.restore();
+          } else {
+            context.textAlign = "center";
+            context.fillText(
+              formatAxisTick(tick),
+              x,
+              margin.top - 17
+            );
+          }
+        });
+
+        // 稳定零轴
+        const zeroX = xScale(0);
         context.beginPath();
-        context.strokeStyle = "#dbe5f0";
-        context.lineWidth = 1;
-        context.setLineDash([3, 6]);
-        context.moveTo(x, margin.top);
+        context.strokeStyle = "#475569";
+        context.lineWidth = 2;
+        context.setLineDash([]);
+        context.globalAlpha =
+          domainMin < 0 && domainMax > 0
+            ? 0.90
+            : 0.55;
+        context.moveTo(zeroX, margin.top);
         context.lineTo(
-          x,
+          zeroX,
           logicalHeight - margin.bottom
         );
         context.stroke();
-
-        context.setLineDash([]);
-        context.fillStyle = "#64748b";
-
-        if (axisLayout.rotate) {
-          context.save();
-          context.translate(
-            x - 3,
-            margin.top - 14
-          );
-          context.rotate(
-            axisLayout.angle *
-            Math.PI / 180
-          );
-          context.textAlign = "right";
-          context.fillText(
-            formatAxisTick(tick),
-            0,
-            0
-          );
-          context.restore();
-        } else {
-          context.textAlign = "center";
-          context.fillText(
-            formatAxisTick(tick),
-            x,
-            margin.top - 17
-          );
-        }
-      });
-
-      // 稳定零轴
-      const zeroX = xScale(0);
-      context.beginPath();
-      context.strokeStyle = "#475569";
-      context.lineWidth = 2;
-      context.setLineDash([]);
-      context.globalAlpha =
-        domainMin < 0 && domainMax > 0
-          ? 0.90
-          : 0.55;
-      context.moveTo(zeroX, margin.top);
-      context.lineTo(
-        zeroX,
-        logicalHeight - margin.bottom
-      );
-      context.stroke();
-      context.globalAlpha = 1;
+        context.globalAlpha = 1;
+      }
 
       const yBand = d3.scaleBand()
         .domain(ranking.map(item => item.name))
@@ -4485,35 +4522,52 @@ const WIDTH = 1280;
 
       if (isDanmakuEnabled() && danmakuMap.has(frame.time)) {
         const text = danmakuMap.get(frame.time);
-        const cardX = 580;
-        const cardY = 32;
-        const cardWidth = 640;
-        const cardHeight = 64;
+        const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
 
-        context.save();
-        context.shadowColor = "rgba(30, 41, 59, 0.12)";
-        context.shadowBlur = 10;
-        context.shadowOffsetY = 4;
-        context.fillStyle = "rgba(255, 255, 255, 0.96)";
-        context.strokeStyle = "#2563eb";
-        context.lineWidth = 1.5;
+        if (hasTitle) {
+          const cardX = 580;
+          const cardY = 32;
+          const cardWidth = 640;
+          const cardHeight = 64;
 
-        fillRoundedRect(context, cardX, cardY, cardWidth, cardHeight, 13);
-        context.stroke();
-        context.restore();
+          context.save();
+          context.shadowColor = "rgba(30, 41, 59, 0.12)";
+          context.shadowBlur = 10;
+          context.shadowOffsetY = 4;
+          context.fillStyle = "rgba(255, 255, 255, 0.96)";
+          context.strokeStyle = "#2563eb";
+          context.lineWidth = 1.5;
 
-        context.save();
-        context.fillStyle = "#2563eb";
-        fillRoundedRect(context, cardX + 12, cardY + 11, 5, cardHeight - 22, 2.5);
+          fillRoundedRect(context, cardX, cardY, cardWidth, cardHeight, 13);
+          context.stroke();
+          context.restore();
 
-        context.fillStyle = "#2563eb";
-        context.font = '700 12px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(`📌 ${frame.time}`, cardX + 26, cardY + 24);
+          context.save();
+          context.fillStyle = "#2563eb";
+          fillRoundedRect(context, cardX + 12, cardY + 11, 5, cardHeight - 22, 2.5);
 
-        context.fillStyle = "#0f172a";
-        context.font = '800 15px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(text, cardX + 26, cardY + 47);
-        context.restore();
+          context.fillStyle = "#2563eb";
+          context.font = '700 12px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          context.fillText(`📌 ${frame.time}`, cardX + 26, cardY + 24);
+
+          context.fillStyle = "#0f172a";
+          context.font = '800 15px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          context.fillText(text, cardX + 26, cardY + 47);
+          context.restore();
+        } else {
+          const startX = TITLE_LEFT;
+          const startY = 34;
+
+          context.save();
+          context.fillStyle = "#2563eb";
+          context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          context.fillText(`📌 ${frame.time}`, startX, startY + 8);
+
+          context.fillStyle = "#0f172a";
+          context.font = '800 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          context.fillText(text, startX, startY + 34);
+          context.restore();
+        }
       }
 
       context.restore();
@@ -6025,7 +6079,7 @@ const WIDTH = 1280;
 
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
-      "enableGradientInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
+      "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput",
       "valueStepInput", "unitInput"
