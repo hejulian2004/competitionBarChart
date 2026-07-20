@@ -48,16 +48,18 @@
     }
   };
 
-  const DANMAKU_CARD_HEIGHT = 58;
-  const DANMAKU_CARD_RADIUS = 12;
-  const DANMAKU_MAX_WIDTH = 620;
-  const DANMAKU_MIN_WIDTH = 180;
-  const DANMAKU_HORIZONTAL_PADDING = 16;
-  const DANMAKU_SIDE_INSET = 28;
-  const DANMAKU_CHART_GAP = 18;
+  const DANMAKU_BASE_HEIGHT = 58;
+  const DANMAKU_BASE_RADIUS = 12;
+  const DANMAKU_BASE_MAX_WIDTH = 620;
+  const DANMAKU_BASE_MIN_WIDTH = 180;
+  const DANMAKU_BASE_PADDING = 16;
+  const DANMAKU_BASE_SIDE_INSET = 28;
+  const DANMAKU_BASE_CHART_GAP = 18;
+  const DANMAKU_FADE_START = 0.70;
+  const DANMAKU_FADE_END = 0.94;
   const DATE_RIGHT_PADDING = 24;
   const DATE_BOTTOM_PADDING = 18;
-  const EXPORT_SWITCH_PROGRESS = Math.min(0.96, Math.max(0.5, MOTION_RATIO));
+  const MAX_DANMAKU_CACHE_ITEMS = 64;
 
   const originalUpdateResponsiveChartMargins = updateResponsiveChartMargins;
   const originalRenderFrame = renderFrame;
@@ -66,6 +68,16 @@
 
   let lastLayoutSignature = "";
   let applyingAspectGeometry = false;
+  const danmakuContentCache = new Map();
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function smoothstep(value) {
+    const t = clamp(value, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
 
   function getAspectPreset() {
     const mode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
@@ -74,7 +86,7 @@
 
   function getSelectedScale() {
     const raw = Number(document.querySelector("#chartWidthScaleInput")?.value || 100);
-    return Number.isFinite(raw) ? Math.max(70, Math.min(160, raw)) : 100;
+    return Number.isFinite(raw) ? clamp(raw, 70, 160) : 100;
   }
 
   function getExactLogicalDimensions() {
@@ -153,6 +165,10 @@
     captureArea.style.minHeight = "0";
   }
 
+  function clearDanmakuCache() {
+    danmakuContentCache.clear();
+  }
+
   function applyExactAspectGeometry(render = true) {
     if (applyingAspectGeometry) return;
     applyingAspectGeometry = true;
@@ -173,6 +189,7 @@
 
       valueLabelClipRect.attr("height", HEIGHT);
       syncCaptureAspectRatio();
+      clearDanmakuCache();
 
       const label = document.querySelector("#chartWidthScaleValue");
       if (label) {
@@ -186,6 +203,10 @@
     } finally {
       applyingAspectGeometry = false;
     }
+  }
+
+  function getUiScale() {
+    return clamp(Math.min(WIDTH / 1280, HEIGHT / 720), 0.72, 1.40);
   }
 
   function getBottomMargin() {
@@ -203,28 +224,46 @@
     const title = Boolean(document.querySelector("#titleInput")?.value.trim());
     const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
     const headerBottom = subtitle ? 98 : title ? 72 : 18;
-    const sideInset = Math.max(DANMAKU_SIDE_INSET, Math.round(WIDTH * 0.022));
-    const availableWidth = Math.max(DANMAKU_MIN_WIDTH, WIDTH - sideInset * 2);
+    const uiScale = getUiScale();
+    const cardHeight = Math.round(DANMAKU_BASE_HEIGHT * uiScale);
+    const cardRadius = Math.round(DANMAKU_BASE_RADIUS * uiScale);
+    const padding = Math.round(DANMAKU_BASE_PADDING * uiScale);
+    const sideInset = Math.max(
+      Math.round(DANMAKU_BASE_SIDE_INSET * uiScale),
+      Math.round(WIDTH * 0.022)
+    );
+    const availableWidth = Math.max(
+      Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale),
+      WIDTH - sideInset * 2
+    );
     const isPortrait = WIDTH < HEIGHT;
     const cardWidth = isPortrait
       ? availableWidth
-      : Math.min(DANMAKU_MAX_WIDTH, availableWidth);
+      : Math.min(Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale), availableWidth);
     const startX = isPortrait || !title
       ? sideInset
       : WIDTH - sideInset - cardWidth;
-    const cardY = headerBottom + 14;
+    const cardY = headerBottom + Math.round(14 * uiScale);
+    const chartGap = Math.round(DANMAKU_BASE_CHART_GAP * uiScale);
 
     return {
       startX,
       cardY,
       cardWidth,
-      chartTop: cardY + DANMAKU_CARD_HEIGHT + DANMAKU_CHART_GAP + 42,
+      cardHeight,
+      cardRadius,
+      padding,
+      chartTop: cardY + cardHeight + chartGap + 42,
       labelText: `节点 · ${key}`,
-      labelX: startX + DANMAKU_HORIZONTAL_PADDING,
-      labelY: cardY + 19,
-      textX: startX + DANMAKU_HORIZONTAL_PADDING,
-      textY: cardY + 43,
-      textMaxWidth: Math.max(60, cardWidth - DANMAKU_HORIZONTAL_PADDING * 2)
+      labelOffsetX: padding,
+      labelBaseline: Math.round(cardHeight * 0.33),
+      textOffsetX: padding,
+      textBaseline: Math.round(cardHeight * 0.75),
+      textMaxWidth: Math.max(48, cardWidth - padding * 2),
+      labelFontSize: Math.max(10, Math.round(13 * uiScale)),
+      textFontSize: Math.max(13, Math.round(18 * uiScale)),
+      dotRadius: Math.max(3, Math.round(4 * uiScale)),
+      dotLabelGap: Math.max(8, Math.round(10 * uiScale))
     };
   }
 
@@ -247,7 +286,9 @@
     const baseFontSize = Math.min(104, WIDTH * 0.115, HEIGHT * 0.145);
     const maxTextWidth = Math.max(120, panel.width * (isPortrait ? 0.64 : 0.42));
     const measuredWidth = measureLogicalText(String(text), baseFontSize, 900);
-    const widthScale = measuredWidth > 0 ? Math.min(1, maxTextWidth / measuredWidth) : 1;
+    const widthScale = measuredWidth > 0
+      ? Math.min(1, maxTextWidth / measuredWidth)
+      : 1;
 
     return {
       x: panel.right - DATE_RIGHT_PADDING,
@@ -307,18 +348,21 @@
   function ensureLayout() {
     if (getLayoutSignature() !== lastLayoutSignature) {
       updateResponsiveChartMargins();
+      clearDanmakuCache();
     }
   }
 
   function getDanmakuEntry(frame) {
-    if (!frame || !isDanmakuEnabled()) return null;
+    if (!frame) return null;
     const key = getDanmakuKey(frame.time);
-    return danmakuMap.has(key) ? { key, text: danmakuMap.get(key) } : null;
+    return key && danmakuMap.has(key)
+      ? { key, text: String(danmakuMap.get(key) ?? "") }
+      : null;
   }
 
   function renderSvgDanmaku(frame) {
     danmakuGroup.selectAll("*").remove();
-    const entry = getDanmakuEntry(frame);
+    const entry = isDanmakuEnabled() ? getDanmakuEntry(frame) : null;
     if (!entry) {
       danmakuGroup.style("display", "none");
       return;
@@ -331,35 +375,38 @@
       .attr("x", layout.startX)
       .attr("y", layout.cardY)
       .attr("width", layout.cardWidth)
-      .attr("height", DANMAKU_CARD_HEIGHT)
-      .attr("rx", DANMAKU_CARD_RADIUS)
+      .attr("height", layout.cardHeight)
+      .attr("rx", layout.cardRadius)
       .attr("fill", "#eff6ff")
       .attr("stroke", "#bfdbfe")
       .attr("stroke-width", 1);
 
+    const dotX = layout.startX + layout.labelOffsetX + layout.dotRadius;
+    const dotY = layout.cardY + layout.labelBaseline - layout.dotRadius;
+
     danmakuGroup.append("circle")
-      .attr("cx", layout.labelX + 4)
-      .attr("cy", layout.labelY - 4)
-      .attr("r", 4)
+      .attr("cx", dotX)
+      .attr("cy", dotY)
+      .attr("r", layout.dotRadius)
       .attr("fill", "#2563eb");
 
     danmakuGroup.append("text")
-      .attr("x", layout.labelX + 14)
-      .attr("y", layout.labelY)
-      .attr("font-size", 13)
+      .attr("x", dotX + layout.dotRadius + layout.dotLabelGap)
+      .attr("y", layout.cardY + layout.labelBaseline)
+      .attr("font-size", layout.labelFontSize)
       .attr("font-weight", 700)
       .attr("fill", "#2563eb")
       .text(layout.labelText);
 
     const textElement = danmakuGroup.append("text")
-      .attr("x", layout.textX)
-      .attr("y", layout.textY)
-      .attr("font-size", 18)
+      .attr("x", layout.startX + layout.textOffsetX)
+      .attr("y", layout.cardY + layout.textBaseline)
+      .attr("font-size", layout.textFontSize)
       .attr("font-weight", 800)
       .attr("fill", "#0f172a")
       .text(entry.text);
 
-    if (measureLogicalText(entry.text, 18, 800) > layout.textMaxWidth) {
+    if (measureLogicalText(entry.text, layout.textFontSize, 800) > layout.textMaxWidth) {
       textElement
         .attr("textLength", layout.textMaxWidth)
         .attr("lengthAdjust", "spacingAndGlyphs");
@@ -382,12 +429,7 @@
     renderSvgDanmaku(frame);
   };
 
-  function getExportActiveFrame(fromFrame, toFrame, linearProgress) {
-    if (!toFrame) return fromFrame;
-    return linearProgress >= EXPORT_SWITCH_PROGRESS ? toFrame : fromFrame;
-  }
-
-  function fillCanvasRoundedRect(context, x, y, width, height, radius) {
+  function roundedRectPath(context, x, y, width, height, radius) {
     const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
     context.beginPath();
     context.moveTo(x + safeRadius, y);
@@ -400,66 +442,243 @@
     context.lineTo(x, y + safeRadius);
     context.quadraticCurveTo(x, y, x + safeRadius, y);
     context.closePath();
+  }
+
+  function getPixelDanmakuLayout(outputWidth, outputHeight, entry) {
+    const logical = getDanmakuLayout(entry?.key || "");
+    const scaleX = outputWidth / WIDTH;
+    const scaleY = outputHeight / HEIGHT;
+    const fontScale = Math.min(scaleX, scaleY);
+
+    return {
+      x: Math.round(logical.startX * scaleX),
+      y: Math.round(logical.cardY * scaleY),
+      width: Math.max(1, Math.round(logical.cardWidth * scaleX)),
+      height: Math.max(1, Math.round(logical.cardHeight * scaleY)),
+      radius: Math.max(1, Math.round(logical.cardRadius * fontScale)),
+      paddingX: Math.max(1, Math.round(logical.labelOffsetX * scaleX)),
+      labelBaseline: Math.round(logical.labelBaseline * scaleY),
+      textBaseline: Math.round(logical.textBaseline * scaleY),
+      labelFontSize: Math.max(8, Math.round(logical.labelFontSize * fontScale)),
+      textFontSize: Math.max(10, Math.round(logical.textFontSize * fontScale)),
+      dotRadius: Math.max(2, Math.round(logical.dotRadius * fontScale)),
+      dotLabelGap: Math.max(5, Math.round(logical.dotLabelGap * scaleX)),
+      maxTextWidth: Math.max(20, Math.round(logical.textMaxWidth * scaleX)),
+      lineWidth: Math.max(1, Math.round(fontScale))
+    };
+  }
+
+  function getDanmakuCacheKey(outputWidth, outputHeight, entry, pixelLayout) {
+    return [
+      outputWidth,
+      outputHeight,
+      WIDTH,
+      HEIGHT,
+      pixelLayout.width,
+      pixelLayout.height,
+      entry.key,
+      entry.text
+    ].join("|");
+  }
+
+  function trimDanmakuCache() {
+    while (danmakuContentCache.size > MAX_DANMAKU_CACHE_ITEMS) {
+      const firstKey = danmakuContentCache.keys().next().value;
+      danmakuContentCache.delete(firstKey);
+    }
+  }
+
+  function getCachedDanmakuContent(outputWidth, outputHeight, entry, pixelLayout) {
+    const cacheKey = getDanmakuCacheKey(
+      outputWidth,
+      outputHeight,
+      entry,
+      pixelLayout
+    );
+    const cached = danmakuContentCache.get(cacheKey);
+    if (cached) return cached;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = pixelLayout.width;
+    canvas.height = pixelLayout.height;
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) return null;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.textBaseline = "alphabetic";
+    context.textAlign = "left";
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+
+    const dotX = pixelLayout.paddingX + pixelLayout.dotRadius;
+    const dotY = pixelLayout.labelBaseline - pixelLayout.dotRadius;
+    context.fillStyle = "#2563eb";
+    context.beginPath();
+    context.arc(dotX, dotY, pixelLayout.dotRadius, 0, Math.PI * 2);
     context.fill();
+
+    context.font =
+      `700 ${pixelLayout.labelFontSize}px ` +
+      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+    context.fillText(
+      `节点 · ${entry.key}`,
+      dotX + pixelLayout.dotRadius + pixelLayout.dotLabelGap,
+      pixelLayout.labelBaseline
+    );
+
+    context.fillStyle = "#0f172a";
+    context.font =
+      `800 ${pixelLayout.textFontSize}px ` +
+      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+    context.fillText(
+      entry.text,
+      pixelLayout.paddingX,
+      pixelLayout.textBaseline,
+      pixelLayout.maxTextWidth
+    );
+
+    danmakuContentCache.set(cacheKey, canvas);
+    trimDanmakuCache();
+    return canvas;
   }
 
-  function withLogicalCanvas(context, outputWidth, outputHeight, draw) {
+  function drawDanmakuShell(context, pixelLayout, alpha) {
+    if (alpha <= 0.001) return;
     context.save();
-    context.setTransform(outputWidth / WIDTH, 0, 0, outputHeight / HEIGHT, 0, 0);
-    draw();
-    context.restore();
     context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = clamp(alpha, 0, 1);
+
+    const inset = pixelLayout.lineWidth / 2;
+    roundedRectPath(
+      context,
+      pixelLayout.x + inset,
+      pixelLayout.y + inset,
+      Math.max(1, pixelLayout.width - pixelLayout.lineWidth),
+      Math.max(1, pixelLayout.height - pixelLayout.lineWidth),
+      pixelLayout.radius
+    );
+    context.fillStyle = "#eff6ff";
+    context.fill();
+    context.strokeStyle = "#bfdbfe";
+    context.lineWidth = pixelLayout.lineWidth;
+    context.stroke();
+    context.restore();
   }
 
-  function drawCanvasDanmaku(context, outputWidth, outputHeight, entry) {
-    const layout = getDanmakuLayout(entry.key);
-    withLogicalCanvas(context, outputWidth, outputHeight, () => {
-      context.textBaseline = "alphabetic";
-      context.fillStyle = "#eff6ff";
-      fillCanvasRoundedRect(
-        context,
-        layout.startX,
-        layout.cardY,
-        layout.cardWidth,
-        DANMAKU_CARD_HEIGHT,
-        DANMAKU_CARD_RADIUS
-      );
-      context.strokeStyle = "#bfdbfe";
-      context.lineWidth = 1;
-      drawRoundedStroke(
-        context,
-        layout.startX,
-        layout.cardY,
-        layout.cardWidth,
-        DANMAKU_CARD_HEIGHT,
-        DANMAKU_CARD_RADIUS
-      );
+  function drawDanmakuContent(context, outputWidth, outputHeight, entry, alpha) {
+    if (!entry || alpha <= 0.001) return;
+    const pixelLayout = getPixelDanmakuLayout(outputWidth, outputHeight, entry);
+    const content = getCachedDanmakuContent(
+      outputWidth,
+      outputHeight,
+      entry,
+      pixelLayout
+    );
+    if (!content) return;
 
-      context.fillStyle = "#2563eb";
-      context.beginPath();
-      context.arc(layout.labelX + 4, layout.labelY - 4, 4, 0, Math.PI * 2);
-      context.fill();
-      context.font = '700 13px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
-      context.textAlign = "left";
-      context.fillText(layout.labelText, layout.labelX + 14, layout.labelY);
-      context.fillStyle = "#0f172a";
-      context.font = '800 18px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
-      context.fillText(entry.text, layout.textX, layout.textY, layout.textMaxWidth);
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = clamp(alpha, 0, 1);
+    context.drawImage(content, pixelLayout.x, pixelLayout.y);
+    context.restore();
+  }
+
+  function sameDanmakuEntry(a, b) {
+    return Boolean(a && b && a.key === b.key && a.text === b.text);
+  }
+
+  function getDanmakuTransition(fromFrame, toFrame, linearProgress) {
+    const fromEntry = getDanmakuEntry(fromFrame);
+    const toEntry = toFrame ? getDanmakuEntry(toFrame) : fromEntry;
+
+    if (sameDanmakuEntry(fromEntry, toEntry)) {
+      return {
+        shellAlpha: fromEntry ? 1 : 0,
+        layers: fromEntry ? [{ entry: fromEntry, alpha: 1 }] : []
+      };
+    }
+
+    const normalized = (
+      clamp(Number(linearProgress) || 0, 0, 1) - DANMAKU_FADE_START
+    ) / (DANMAKU_FADE_END - DANMAKU_FADE_START);
+    const blend = smoothstep(normalized);
+
+    return {
+      shellAlpha: fromEntry && toEntry
+        ? 1
+        : fromEntry
+          ? 1 - blend
+          : toEntry
+            ? blend
+            : 0,
+      layers: [
+        fromEntry ? { entry: fromEntry, alpha: 1 - blend } : null,
+        toEntry ? { entry: toEntry, alpha: blend } : null
+      ].filter(Boolean)
+    };
+  }
+
+  function drawStableDanmaku(
+    context,
+    outputWidth,
+    outputHeight,
+    fromFrame,
+    toFrame,
+    linearProgress
+  ) {
+    const transition = getDanmakuTransition(
+      fromFrame,
+      toFrame,
+      linearProgress
+    );
+    if (transition.shellAlpha <= 0.001 || transition.layers.length === 0) return;
+
+    const placementEntry = transition.layers[0].entry;
+    const pixelLayout = getPixelDanmakuLayout(
+      outputWidth,
+      outputHeight,
+      placementEntry
+    );
+    drawDanmakuShell(context, pixelLayout, transition.shellAlpha);
+    transition.layers.forEach(layer => {
+      drawDanmakuContent(
+        context,
+        outputWidth,
+        outputHeight,
+        layer.entry,
+        layer.alpha
+      );
     });
   }
 
-  function drawCanvasDate(context, outputWidth, outputHeight, text) {
+  function getTimelineActiveFrame(fromFrame, toFrame, linearProgress) {
+    if (!toFrame) return fromFrame;
+    return (Number(linearProgress) || 0) >= 0.82 ? toFrame : fromFrame;
+  }
+
+  function drawPixelAlignedDate(context, outputWidth, outputHeight, text) {
     if (!text) return;
-    const layout = getDateLayout(text);
-    withLogicalCanvas(context, outputWidth, outputHeight, () => {
-      context.globalAlpha = 0.20;
-      context.fillStyle = "#2563eb";
-      context.font = `900 ${layout.fontSize}px "Microsoft YaHei","PingFang SC",Arial,sans-serif`;
-      context.textAlign = "right";
-      context.textBaseline = "alphabetic";
-      context.fillText(String(text), layout.x, layout.y, layout.maxTextWidth);
-      context.globalAlpha = 1;
-    });
+    const logical = getDateLayout(text);
+    const scaleX = outputWidth / WIDTH;
+    const scaleY = outputHeight / HEIGHT;
+    const fontScale = Math.min(scaleX, scaleY);
+
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = 0.20;
+    context.fillStyle = "#2563eb";
+    context.font =
+      `900 ${Math.max(18, Math.round(logical.fontSize * fontScale))}px ` +
+      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+    context.textAlign = "right";
+    context.textBaseline = "alphabetic";
+    context.fillText(
+      String(text),
+      Math.round(logical.x * scaleX),
+      Math.round(logical.y * scaleY),
+      Math.max(40, Math.round(logical.maxTextWidth * scaleX))
+    );
+    context.restore();
   }
 
   drawDirectCanvasVideoFrame = function patchedDrawDirectCanvasVideoFrame(
@@ -474,9 +693,8 @@
     ensureLayout();
     const checkbox = document.querySelector("#showDanmakuInput");
     const enabled = checkbox ? checkbox.checked : true;
-    const activeFrame = getExportActiveFrame(fromFrame, toFrame, linearProgress);
-    const hiddenFrom = { ...fromFrame, time: "" };
-    const hiddenTo = { ...(toFrame || fromFrame), time: "" };
+    const hiddenFrom = { ...(fromFrame || {}), time: "" };
+    const hiddenTo = { ...(toFrame || fromFrame || {}), time: "" };
     const savedRangeFunction = getYScaleTargetRange;
 
     getYScaleTargetRange = function exportFullHeightRange() {
@@ -499,10 +717,27 @@
       if (checkbox && enabled) checkbox.checked = true;
     }
 
-    drawCanvasDate(context, outputWidth, outputHeight, activeFrame?.time);
+    const activeFrame = getTimelineActiveFrame(
+      fromFrame,
+      toFrame,
+      linearProgress
+    );
+    drawPixelAlignedDate(
+      context,
+      outputWidth,
+      outputHeight,
+      activeFrame?.time
+    );
+
     if (enabled) {
-      const entry = getDanmakuEntry(activeFrame);
-      if (entry) drawCanvasDanmaku(context, outputWidth, outputHeight, entry);
+      drawStableDanmaku(
+        context,
+        outputWidth,
+        outputHeight,
+        fromFrame,
+        toFrame,
+        linearProgress
+      );
     }
   };
 
@@ -515,6 +750,16 @@
     ?.addEventListener("change", syncAspectAndExportSettings);
   document.querySelector("#chartWidthScaleInput")
     ?.addEventListener("input", () => applyExactAspectGeometry(true));
+  document.querySelector("#titleInput")
+    ?.addEventListener("input", clearDanmakuCache);
+  document.querySelector("#subtitleInput")
+    ?.addEventListener("input", clearDanmakuCache);
+  document.querySelector("#danmakuTextInput")
+    ?.addEventListener("input", clearDanmakuCache);
+
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(clearDanmakuCache).catch(() => {});
+  }
 
   syncVideoResolutionOptions();
   applyExactAspectGeometry(false);
