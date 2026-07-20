@@ -8076,7 +8076,7 @@
     };
 
     loadClassicScript("main-layout-base.js", () => {
-      const MAX_LINES = 3;
+      const MAX_LINES = 4;
       const CACHE_LIMIT = 96;
       const FADE_START = 0.70;
       const FADE_END = 0.94;
@@ -8120,13 +8120,17 @@
 
           if (lines.length >= maximumLines - 1) {
             let finalLine = characters.slice(index).join("");
+            if (measureLogicalText(finalLine, fontSize, 800) <= maximumWidth) {
+              lines.push(finalLine);
+              return lines;
+            }
             while (
               finalLine.length > 0 &&
               measureLogicalText(`${finalLine}…`, fontSize, 800) > maximumWidth
             ) {
               finalLine = Array.from(finalLine).slice(0, -1).join("");
             }
-            lines.push(`${finalLine}…`);
+            lines.push(finalLine ? `${finalLine}…` : "…");
             return lines;
           }
         }
@@ -8164,7 +8168,7 @@
         danmakuMap.forEach(text => {
           count = Math.max(
             count,
-            wrapText(text, metrics.textWidth, metrics.textFontSize).length || 1
+            wrapText(text, metrics.textWidth, metrics.textFontSize, 4).length || 1
           );
         });
         return Math.min(MAX_LINES, count);
