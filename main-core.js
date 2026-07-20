@@ -5016,6 +5016,19 @@
           }
         };
 
+        const coverMode = document.querySelector("#videoCoverFrameInput")?.value || "last";
+
+        if (coverMode === "last" && raceData.length > 0) {
+          const lastFrame = raceData[raceData.length - 1];
+          await encodeCanvasFrame(
+            lastFrame,
+            lastFrame,
+            1,
+            1,
+            true
+          );
+        }
+
         if (intervalCount === 0) {
           await encodeCanvasFrame(
             raceData[0],
@@ -6056,7 +6069,7 @@
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
-      "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+      "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
       "valueStepInput", "unitInput"
     ];
 

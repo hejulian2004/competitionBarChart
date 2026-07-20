@@ -988,6 +988,14 @@
         </div>
 
         <div class="field">
+          <label for="videoCoverFrameInput">视频封面帧（缩略图）</label>
+          <select id="videoCoverFrameInput">
+            <option value="last" selected>最后一帧（推荐：最终结果图）</option>
+            <option value="first">第一帧（初始状态）</option>
+          </select>
+        </div>
+
+        <div class="field">
           <label for="valueStepInput">数值显示步长（1 表示逐整数）</label>
           <input id="valueStepInput" type="number" min="0.001" step="0.001" value="1" />
         </div>
@@ -6136,6 +6144,19 @@
           }
         };
 
+        const coverMode = document.querySelector("#videoCoverFrameInput")?.value || "last";
+
+        if (coverMode === "last" && raceData.length > 0) {
+          const lastFrame = raceData[raceData.length - 1];
+          await encodeCanvasFrame(
+            lastFrame,
+            lastFrame,
+            1,
+            1,
+            true
+          );
+        }
+
         if (intervalCount === 0) {
           await encodeCanvasFrame(
             raceData[0],
@@ -7176,7 +7197,7 @@
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
-      "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+      "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
       "valueStepInput", "unitInput"
     ];
 
