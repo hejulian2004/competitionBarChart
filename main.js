@@ -152,8 +152,10 @@ const WIDTH = 1280;
       .attr("rx", 19)
       .attr("filter", "url(#surfaceShadow)");
 
+    const TITLE_LEFT = CHART_SIDE_PADDING + 16;
+
     const titleAccent = svg.append("rect")
-      .attr("x", margin.left - 18)
+      .attr("x", TITLE_LEFT - 14)
       .attr("y", 34)
       .attr("width", 5)
       .attr("height", 31)
@@ -162,12 +164,12 @@ const WIDTH = 1280;
 
     const titleLabel = svg.append("text")
       .attr("class", "chart-title")
-      .attr("x", margin.left)
+      .attr("x", TITLE_LEFT)
       .attr("y", 55);
 
     const subtitleLabel = svg.append("text")
       .attr("class", "chart-subtitle")
-      .attr("x", margin.left)
+      .attr("x", TITLE_LEFT)
       .attr("y", 88);
 
     const zeroLine = svg.append("line")
@@ -203,6 +205,38 @@ const WIDTH = 1280;
         option.textContent = t;
         select.appendChild(option);
       });
+
+      updateDanmakuFormState();
+    }
+
+    function updateDanmakuFormState() {
+      const timeSelect = document.querySelector("#danmakuTimeSelect");
+      const addBtn = document.querySelector("#addDanmakuButton");
+      const textInput = document.querySelector("#danmakuTextInput");
+      if (!timeSelect || !addBtn) return;
+
+      const currentTime = timeSelect.value;
+      if (danmakuMap.has(currentTime)) {
+        addBtn.textContent = "更新解说";
+        addBtn.classList.add("primary");
+      } else {
+        addBtn.textContent = "添加解说";
+        addBtn.classList.remove("primary");
+      }
+    }
+
+    function editDanmaku(time) {
+      const timeSelect = document.querySelector("#danmakuTimeSelect");
+      const textInput = document.querySelector("#danmakuTextInput");
+      if (!timeSelect || !textInput) return;
+
+      timeSelect.value = time;
+      if (danmakuMap.has(time)) {
+        textInput.value = danmakuMap.get(time);
+      }
+      textInput.focus();
+      updateDanmakuFormState();
+      setStatus(`已将【${time}】的解说内容载入输入框，修改后点击“更新解说”即可保存。`);
     }
 
     function renderDanmakuList() {
@@ -216,12 +250,14 @@ const WIDTH = 1280;
         empty.style.fontSize = "12.5px";
         empty.textContent = "尚未添加任何时间节点解说。";
         container.appendChild(empty);
+        updateDanmakuFormState();
         return;
       }
 
       danmakuMap.forEach((text, time) => {
         const item = document.createElement("div");
         item.className = "danmaku-item";
+        item.title = "点击编辑此条解说";
 
         const timeSpan = document.createElement("span");
         timeSpan.className = "danmaku-time";
@@ -231,15 +267,31 @@ const WIDTH = 1280;
         textSpan.className = "danmaku-text";
         textSpan.textContent = text;
 
+        const editBtn = document.createElement("button");
+        editBtn.className = "danmaku-edit";
+        editBtn.innerHTML = "✏️";
+        editBtn.title = "编辑此条解说";
+        editBtn.onclick = (e) => {
+          e.stopPropagation();
+          editDanmaku(time);
+        };
+
         const removeBtn = document.createElement("button");
         removeBtn.className = "danmaku-remove";
         removeBtn.textContent = "✕";
         removeBtn.title = "删除此条解说";
-        removeBtn.onclick = () => removeDanmaku(time);
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          removeDanmaku(time);
+        };
 
-        item.append(timeSpan, textSpan, removeBtn);
+        item.onclick = () => editDanmaku(time);
+
+        item.append(timeSpan, textSpan, editBtn, removeBtn);
         container.appendChild(item);
       });
+
+      updateDanmakuFormState();
     }
 
     function addDanmaku() {
@@ -254,12 +306,13 @@ const WIDTH = 1280;
         return;
       }
 
+      const isUpdate = danmakuMap.has(time);
       danmakuMap.set(time, text);
       textInput.value = "";
       renderDanmakuList();
       saveAppState();
       renderFrame(raceData[currentFrameIndex], false);
-      setStatus(`已为【${time}】添加解说：“${text}”。`);
+      setStatus(isUpdate ? `已更新【${time}】的解说为：“${text}”。` : `已为【${time}】添加解说：“${text}”。`);
     }
 
     function removeDanmaku(time) {
@@ -1897,11 +1950,11 @@ const WIDTH = 1280;
       );
       margin.right = 52;
 
-      titleLabel.attr("x", margin.left);
-      subtitleLabel.attr("x", margin.left);
+      titleLabel.attr("x", TITLE_LEFT);
+      subtitleLabel.attr("x", TITLE_LEFT);
 
       titleAccent
-        .attr("x", margin.left - 18);
+        .attr("x", TITLE_LEFT - 14);
 
       plotSurface
         .attr("x", CHART_SIDE_PADDING)
@@ -3032,10 +3085,10 @@ const WIDTH = 1280;
         danmakuGroup.style("display", null);
         danmakuGroup.selectAll("*").remove();
 
-        const cardX = 720;
-        const cardY = 36;
-        const cardWidth = 440;
-        const cardHeight = 60;
+        const cardX = 580;
+        const cardY = 32;
+        const cardWidth = 640;
+        const cardHeight = 64;
 
         danmakuGroup.append("rect")
           .attr("x", cardX)
@@ -3066,8 +3119,8 @@ const WIDTH = 1280;
 
         danmakuGroup.append("text")
           .attr("x", cardX + 26)
-          .attr("y", cardY + 45)
-          .attr("font-size", 14.5)
+          .attr("y", cardY + 47)
+          .attr("font-size", 15)
           .attr("font-weight", 800)
           .attr("fill", "#0f172a")
           .text(text);
@@ -4047,7 +4100,7 @@ const WIDTH = 1280;
       context.fillStyle = "#2563eb";
       fillRoundedRect(
         context,
-        margin.left - 18,
+        TITLE_LEFT - 14,
         34,
         5,
         31,
@@ -4062,7 +4115,7 @@ const WIDTH = 1280;
       context.fillText(
         document.querySelector("#titleInput").value.trim() ||
           "条形竞赛图",
-        margin.left,
+        TITLE_LEFT,
         55
       );
 
@@ -4071,7 +4124,7 @@ const WIDTH = 1280;
         '550 15px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
       context.fillText(
         document.querySelector("#subtitleInput").value.trim(),
-        margin.left,
+        TITLE_LEFT,
         88
       );
 
@@ -4402,10 +4455,10 @@ const WIDTH = 1280;
 
       if (isDanmakuEnabled() && danmakuMap.has(frame.time)) {
         const text = danmakuMap.get(frame.time);
-        const cardX = 720;
-        const cardY = 36;
-        const cardWidth = 440;
-        const cardHeight = 60;
+        const cardX = 580;
+        const cardY = 32;
+        const cardWidth = 640;
+        const cardHeight = 64;
 
         context.save();
         context.shadowColor = "rgba(30, 41, 59, 0.12)";
@@ -4428,8 +4481,8 @@ const WIDTH = 1280;
         context.fillText(`📌 ${frame.time}`, cardX + 26, cardY + 24);
 
         context.fillStyle = "#0f172a";
-        context.font = '800 14.5px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(text, cardX + 26, cardY + 45);
+        context.font = '800 15px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+        context.fillText(text, cardX + 26, cardY + 47);
         context.restore();
       }
 
@@ -5970,6 +6023,18 @@ const WIDTH = 1280;
 
     document.querySelector("#addDanmakuButton")
       ?.addEventListener("click", addDanmaku);
+
+    document.querySelector("#danmakuTimeSelect")
+      ?.addEventListener("change", (e) => {
+        const time = e.target.value;
+        const textInput = document.querySelector("#danmakuTextInput");
+        if (danmakuMap.has(time)) {
+          if (textInput) textInput.value = danmakuMap.get(time);
+        } else {
+          if (textInput) textInput.value = "";
+        }
+        updateDanmakuFormState();
+      });
 
     document.querySelector("#danmakuTextInput")
       ?.addEventListener("keydown", event => {

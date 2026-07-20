@@ -803,6 +803,22 @@
       color: #1e293b;
     }
 
+    .danmaku-item .danmaku-edit {
+      border: none;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 13px;
+      line-height: 1;
+      transition: color 120ms ease, transform 120ms ease;
+    }
+
+    .danmaku-item .danmaku-edit:hover {
+      color: #2563eb;
+      transform: scale(1.15);
+    }
+
     .danmaku-item .danmaku-remove {
       border: none;
       background: transparent;
