@@ -66,11 +66,11 @@
       .attr("id", "valueLabelClip")
       .attr("clipPathUnits", "userSpaceOnUse")
       .append("rect")
-      .attr("x", margin.left + 4)
+      .attr("x", CHART_SIDE_PADDING)
       .attr("y", 0)
       .attr(
         "width",
-        WIDTH - margin.left - margin.right - 8
+        WIDTH - CHART_SIDE_PADDING * 2
       )
       .attr("height", HEIGHT);
 
@@ -798,15 +798,15 @@
         : VALUE_ICON_SIZE;
 
       return Math.max(
-        115,
+        150,
         Math.min(
-          280,
+          320,
           Math.ceil(
             maximumTextWidth +
             iconSize +
             VALUE_ICON_TEXT_GAP +
             VALUE_BAR_GAP +
-            24
+            28
           )
         )
       );
@@ -2075,7 +2075,9 @@
       );
 
       const valueGutter = getValueLabelGutter();
-      margin.right = Math.max(115, Math.min(280, valueGutter + 12));
+      margin.right = isPortrait
+        ? Math.max(170, Math.min(320, valueGutter + 28))
+        : Math.max(150, Math.min(320, valueGutter + 16));
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
@@ -2310,24 +2312,13 @@
           valueX - VALUE_BAR_GAP,
           plotRight
         );
-
-        groupLeft =
-          groupRight - groupWidth;
+        groupLeft = Math.max(plotLeft, groupRight - groupWidth);
       } else {
-        groupLeft =
-          valueX + VALUE_BAR_GAP;
+        groupLeft = valueX + VALUE_BAR_GAP;
+        if (groupLeft + groupWidth > plotRight) {
+          groupLeft = Math.max(valueX + VALUE_BAR_GAP, plotRight - groupWidth);
+        }
       }
-
-      /*
-       * 无论横轴如何缩放，最终整体都夹紧在绘图区内。
-       */
-      groupLeft = Math.max(
-        plotLeft,
-        Math.min(
-          plotRight - groupWidth,
-          groupLeft
-        )
-      );
 
       const iconCenterX =
         groupLeft +
@@ -2417,7 +2408,7 @@
         datum.value,
         getBarColor(datum.name),
         valueText,
-        `#${datum.rank}`,
+        "",
         21,
         15,
         getSvgValueIconSize()
@@ -3148,76 +3139,7 @@
         .style("opacity", 0)
         .remove();
 
-      const ranks = chartGroup.selectAll("text.rank-label")
-        .data(ranking, d => d.name);
-
-      ranks.enter()
-        .append("text")
-        .attr("class", "rank-label")
-        .attr(
-          "x",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankLabelX
-        )
-        .attr("y", bottomY)
-        .style("opacity", 0)
-        .attr("dominant-baseline", "middle")
-        .attr(
-          "text-anchor",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankAnchor
-        )
-        .style(
-          "fill",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankColor
-        )
-        .text(d => `#${d.rank}`)
-        .merge(ranks)
-        .transition(transition)
-        .attr(
-          "x",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankLabelX
-        )
-        .attr(
-          "text-anchor",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankAnchor
-        )
-        .style(
-          "fill",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankColor
-        )
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
-        .text(d => `#${d.rank}`);
-
-      ranks.exit().transition(transition).style("opacity", 0).remove();
+      chartGroup.selectAll("text.rank-label").remove();
 
       const frameKey = getDanmakuKey(frame.time);
       if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
@@ -4505,7 +4427,7 @@
         );
 
         const valueText = formatValue(labelValue);
-        const rankText = `#${item.rank}`;
+        const rankText = "";
 
         const effectiveIconSize =
           getEffectiveValueIconSize(
@@ -4525,14 +4447,12 @@
         context.save();
         context.beginPath();
         context.rect(
-          margin.left + 4,
+          CHART_SIDE_PADDING,
           0,
           Math.max(
             1,
             logicalWidth -
-              margin.left -
-              margin.right -
-              8
+              CHART_SIDE_PADDING * 2
           ),
           logicalHeight
         );
@@ -4563,20 +4483,6 @@
         );
 
         context.restore();
-
-        context.font =
-          `800 ${rankFontSize}px ` +
-          '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
-        context.fillStyle = labelLayout.rankColor;
-        context.textAlign =
-          labelLayout.rankAnchor === "end"
-            ? "right"
-            : "left";
-        context.fillText(
-          rankText,
-          labelLayout.rankLabelX,
-          centerY
-        );
       });
 
       // 时间标签

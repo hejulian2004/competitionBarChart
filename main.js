@@ -81,14 +81,15 @@
       }
 
       function getBaseMetrics() {
-        const scale = getUiScale();
-        const padding = Math.max(14, Math.round(18 * scale));
-        const labelFontSize = Math.max(11, Math.round(14 * scale));
-        const textFontSize = Math.max(15, Math.round(20 * scale));
-        const lineHeight = Math.max(21, Math.round(26 * scale));
-        const sideInset = Math.max(Math.round(28 * scale), Math.round(WIDTH * 0.03));
+        const isPortrait = WIDTH < HEIGHT;
+        const scale = isPortrait ? Math.max(1.05, Math.min(1.35, HEIGHT / 960)) : getUiScale();
+        const padding = Math.max(14, Math.round((isPortrait ? 20 : 18) * scale));
+        const labelFontSize = isPortrait ? Math.max(15, Math.round(16 * scale)) : Math.max(11, Math.round(14 * scale));
+        const textFontSize = isPortrait ? Math.max(22, Math.round(24 * scale)) : Math.max(15, Math.round(20 * scale));
+        const lineHeight = Math.max(21, Math.round((isPortrait ? 30 : 26) * scale));
+        const sideInset = Math.max(Math.round(28 * scale), Math.round(WIDTH * 0.025));
         const availableWidth = Math.max(Math.round(200 * scale), WIDTH - sideInset * 2);
-        const cardWidth = WIDTH < HEIGHT
+        const cardWidth = isPortrait
           ? availableWidth
           : Math.min(Math.round(720 * scale), availableWidth);
 

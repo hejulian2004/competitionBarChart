@@ -1186,11 +1186,11 @@
       .attr("id", "valueLabelClip")
       .attr("clipPathUnits", "userSpaceOnUse")
       .append("rect")
-      .attr("x", margin.left + 4)
+      .attr("x", CHART_SIDE_PADDING)
       .attr("y", 0)
       .attr(
         "width",
-        WIDTH - margin.left - margin.right - 8
+        WIDTH - CHART_SIDE_PADDING * 2
       )
       .attr("height", HEIGHT);
 
@@ -1918,15 +1918,15 @@
         : VALUE_ICON_SIZE;
 
       return Math.max(
-        115,
+        150,
         Math.min(
-          280,
+          320,
           Math.ceil(
             maximumTextWidth +
             iconSize +
             VALUE_ICON_TEXT_GAP +
             VALUE_BAR_GAP +
-            24
+            28
           )
         )
       );
@@ -3195,7 +3195,9 @@
       );
 
       const valueGutter = getValueLabelGutter();
-      margin.right = Math.max(115, Math.min(280, valueGutter + 12));
+      margin.right = isPortrait
+        ? Math.max(170, Math.min(320, valueGutter + 28))
+        : Math.max(150, Math.min(320, valueGutter + 16));
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
@@ -3430,24 +3432,13 @@
           valueX - VALUE_BAR_GAP,
           plotRight
         );
-
-        groupLeft =
-          groupRight - groupWidth;
+        groupLeft = Math.max(plotLeft, groupRight - groupWidth);
       } else {
-        groupLeft =
-          valueX + VALUE_BAR_GAP;
+        groupLeft = valueX + VALUE_BAR_GAP;
+        if (groupLeft + groupWidth > plotRight) {
+          groupLeft = Math.max(valueX + VALUE_BAR_GAP, plotRight - groupWidth);
+        }
       }
-
-      /*
-       * 无论横轴如何缩放，最终整体都夹紧在绘图区内。
-       */
-      groupLeft = Math.max(
-        plotLeft,
-        Math.min(
-          plotRight - groupWidth,
-          groupLeft
-        )
-      );
 
       const iconCenterX =
         groupLeft +
@@ -3537,7 +3528,7 @@
         datum.value,
         getBarColor(datum.name),
         valueText,
-        `#${datum.rank}`,
+        "",
         21,
         15,
         getSvgValueIconSize()
@@ -4268,76 +4259,7 @@
         .style("opacity", 0)
         .remove();
 
-      const ranks = chartGroup.selectAll("text.rank-label")
-        .data(ranking, d => d.name);
-
-      ranks.enter()
-        .append("text")
-        .attr("class", "rank-label")
-        .attr(
-          "x",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankLabelX
-        )
-        .attr("y", bottomY)
-        .style("opacity", 0)
-        .attr("dominant-baseline", "middle")
-        .attr(
-          "text-anchor",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankAnchor
-        )
-        .style(
-          "fill",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankColor
-        )
-        .text(d => `#${d.rank}`)
-        .merge(ranks)
-        .transition(transition)
-        .attr(
-          "x",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankLabelX
-        )
-        .attr(
-          "text-anchor",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankAnchor
-        )
-        .style(
-          "fill",
-          d => getAdaptiveLabelLayout(
-            d.value,
-            getBarColor(d.name),
-            formatValue(getFrameLabelValue(frame, d.name, d.value)),
-            `#${d.rank}`
-          ).rankColor
-        )
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
-        .text(d => `#${d.rank}`);
-
-      ranks.exit().transition(transition).style("opacity", 0).remove();
+      chartGroup.selectAll("text.rank-label").remove();
 
       const frameKey = getDanmakuKey(frame.time);
       if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
@@ -5625,7 +5547,7 @@
         );
 
         const valueText = formatValue(labelValue);
-        const rankText = `#${item.rank}`;
+        const rankText = "";
 
         const effectiveIconSize =
           getEffectiveValueIconSize(
@@ -5645,14 +5567,12 @@
         context.save();
         context.beginPath();
         context.rect(
-          margin.left + 4,
+          CHART_SIDE_PADDING,
           0,
           Math.max(
             1,
             logicalWidth -
-              margin.left -
-              margin.right -
-              8
+              CHART_SIDE_PADDING * 2
           ),
           logicalHeight
         );
@@ -5683,20 +5603,6 @@
         );
 
         context.restore();
-
-        context.font =
-          `800 ${rankFontSize}px ` +
-          '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
-        context.fillStyle = labelLayout.rankColor;
-        context.textAlign =
-          labelLayout.rankAnchor === "end"
-            ? "right"
-            : "left";
-        context.fillText(
-          rankText,
-          labelLayout.rankLabelX,
-          centerY
-        );
       });
 
       // 时间标签
@@ -7573,27 +7479,42 @@
     const title = Boolean(document.querySelector("#titleInput")?.value.trim());
     const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
     const headerBottom = subtitle ? 98 : title ? 72 : 18;
-    const uiScale = getUiScale();
-    const cardHeight = Math.round(DANMAKU_BASE_HEIGHT * uiScale);
+
+    const isPortrait = WIDTH < HEIGHT;
+    const baseScale = getUiScale();
+    const uiScale = isPortrait ? Math.max(1.05, Math.min(1.35, HEIGHT / 960)) : baseScale;
+
+    const baseCardHeight = isPortrait ? 68 : DANMAKU_BASE_HEIGHT;
+    const cardHeight = Math.round(baseCardHeight * uiScale);
     const cardRadius = Math.round(DANMAKU_BASE_RADIUS * uiScale);
-    const padding = Math.round(DANMAKU_BASE_PADDING * uiScale);
+    const padding = Math.round((isPortrait ? 20 : DANMAKU_BASE_PADDING) * uiScale);
     const sideInset = Math.max(
       Math.round(DANMAKU_BASE_SIDE_INSET * uiScale),
-      Math.round(WIDTH * 0.022)
+      Math.round(WIDTH * 0.025)
     );
     const availableWidth = Math.max(
       Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale),
       WIDTH - sideInset * 2
     );
-    const isPortrait = WIDTH < HEIGHT;
+
     const cardWidth = (isPortrait || !title)
-      ? Math.max(Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale), Math.min(WIDTH - sideInset * 2, Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale)))
+      ? Math.max(Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale), Math.min(WIDTH - sideInset * 2, Math.round((isPortrait ? 720 : DANMAKU_BASE_MAX_WIDTH) * uiScale)))
       : Math.min(Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale), availableWidth);
+
     const startX = (isPortrait || !title)
       ? Math.max(sideInset, Math.round((WIDTH - cardWidth) / 2))
       : Math.max(sideInset, WIDTH - sideInset - cardWidth);
+
     const cardY = headerBottom + Math.round(14 * uiScale);
     const chartGap = Math.round(DANMAKU_BASE_CHART_GAP * uiScale);
+
+    const labelFontSize = isPortrait
+      ? Math.max(15, Math.round(16 * uiScale))
+      : Math.max(10, Math.round(13 * uiScale));
+
+    const textFontSize = isPortrait
+      ? Math.max(22, Math.round(24 * uiScale))
+      : Math.max(13, Math.round(18 * uiScale));
 
     return {
       startX,
@@ -7607,12 +7528,12 @@
       labelOffsetX: padding,
       labelBaseline: Math.round(cardHeight * 0.33),
       textOffsetX: padding,
-      textBaseline: Math.round(cardHeight * 0.75),
+      textBaseline: Math.round(cardHeight * 0.76),
       textMaxWidth: Math.max(48, cardWidth - padding * 2),
-      labelFontSize: Math.max(10, Math.round(13 * uiScale)),
-      textFontSize: Math.max(13, Math.round(18 * uiScale)),
-      dotRadius: Math.max(3, Math.round(4 * uiScale)),
-      dotLabelGap: Math.max(8, Math.round(10 * uiScale))
+      labelFontSize,
+      textFontSize,
+      dotRadius: Math.max(3, Math.round((isPortrait ? 5 : 4) * uiScale)),
+      dotLabelGap: Math.max(8, Math.round((isPortrait ? 11 : 10) * uiScale))
     };
   }
 
@@ -8215,14 +8136,15 @@
       }
 
       function getBaseMetrics() {
-        const scale = getUiScale();
-        const padding = Math.max(14, Math.round(18 * scale));
-        const labelFontSize = Math.max(11, Math.round(14 * scale));
-        const textFontSize = Math.max(15, Math.round(20 * scale));
-        const lineHeight = Math.max(21, Math.round(26 * scale));
-        const sideInset = Math.max(Math.round(28 * scale), Math.round(WIDTH * 0.03));
+        const isPortrait = WIDTH < HEIGHT;
+        const scale = isPortrait ? Math.max(1.05, Math.min(1.35, HEIGHT / 960)) : getUiScale();
+        const padding = Math.max(14, Math.round((isPortrait ? 20 : 18) * scale));
+        const labelFontSize = isPortrait ? Math.max(15, Math.round(16 * scale)) : Math.max(11, Math.round(14 * scale));
+        const textFontSize = isPortrait ? Math.max(22, Math.round(24 * scale)) : Math.max(15, Math.round(20 * scale));
+        const lineHeight = Math.max(21, Math.round((isPortrait ? 30 : 26) * scale));
+        const sideInset = Math.max(Math.round(28 * scale), Math.round(WIDTH * 0.025));
         const availableWidth = Math.max(Math.round(200 * scale), WIDTH - sideInset * 2);
-        const cardWidth = WIDTH < HEIGHT
+        const cardWidth = isPortrait
           ? availableWidth
           : Math.min(Math.round(720 * scale), availableWidth);
 

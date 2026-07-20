@@ -238,27 +238,42 @@
     const title = Boolean(document.querySelector("#titleInput")?.value.trim());
     const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
     const headerBottom = subtitle ? 98 : title ? 72 : 18;
-    const uiScale = getUiScale();
-    const cardHeight = Math.round(DANMAKU_BASE_HEIGHT * uiScale);
+
+    const isPortrait = WIDTH < HEIGHT;
+    const baseScale = getUiScale();
+    const uiScale = isPortrait ? Math.max(1.05, Math.min(1.35, HEIGHT / 960)) : baseScale;
+
+    const baseCardHeight = isPortrait ? 68 : DANMAKU_BASE_HEIGHT;
+    const cardHeight = Math.round(baseCardHeight * uiScale);
     const cardRadius = Math.round(DANMAKU_BASE_RADIUS * uiScale);
-    const padding = Math.round(DANMAKU_BASE_PADDING * uiScale);
+    const padding = Math.round((isPortrait ? 20 : DANMAKU_BASE_PADDING) * uiScale);
     const sideInset = Math.max(
       Math.round(DANMAKU_BASE_SIDE_INSET * uiScale),
-      Math.round(WIDTH * 0.022)
+      Math.round(WIDTH * 0.025)
     );
     const availableWidth = Math.max(
       Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale),
       WIDTH - sideInset * 2
     );
-    const isPortrait = WIDTH < HEIGHT;
+
     const cardWidth = (isPortrait || !title)
-      ? Math.max(Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale), Math.min(WIDTH - sideInset * 2, Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale)))
+      ? Math.max(Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale), Math.min(WIDTH - sideInset * 2, Math.round((isPortrait ? 720 : DANMAKU_BASE_MAX_WIDTH) * uiScale)))
       : Math.min(Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale), availableWidth);
+
     const startX = (isPortrait || !title)
       ? Math.max(sideInset, Math.round((WIDTH - cardWidth) / 2))
       : Math.max(sideInset, WIDTH - sideInset - cardWidth);
+
     const cardY = headerBottom + Math.round(14 * uiScale);
     const chartGap = Math.round(DANMAKU_BASE_CHART_GAP * uiScale);
+
+    const labelFontSize = isPortrait
+      ? Math.max(15, Math.round(16 * uiScale))
+      : Math.max(10, Math.round(13 * uiScale));
+
+    const textFontSize = isPortrait
+      ? Math.max(22, Math.round(24 * uiScale))
+      : Math.max(13, Math.round(18 * uiScale));
 
     return {
       startX,
@@ -272,12 +287,12 @@
       labelOffsetX: padding,
       labelBaseline: Math.round(cardHeight * 0.33),
       textOffsetX: padding,
-      textBaseline: Math.round(cardHeight * 0.75),
+      textBaseline: Math.round(cardHeight * 0.76),
       textMaxWidth: Math.max(48, cardWidth - padding * 2),
-      labelFontSize: Math.max(10, Math.round(13 * uiScale)),
-      textFontSize: Math.max(13, Math.round(18 * uiScale)),
-      dotRadius: Math.max(3, Math.round(4 * uiScale)),
-      dotLabelGap: Math.max(8, Math.round(10 * uiScale))
+      labelFontSize,
+      textFontSize,
+      dotRadius: Math.max(3, Math.round((isPortrait ? 5 : 4) * uiScale)),
+      dotLabelGap: Math.max(8, Math.round((isPortrait ? 11 : 10) * uiScale))
     };
   }
 
