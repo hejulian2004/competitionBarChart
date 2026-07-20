@@ -1927,11 +1927,11 @@ const WIDTH = 1280;
 
       activeXAxisScaleType = scaleType;
 
-      const valueLabelGutter =
-        getValueLabelGutter();
+      const valueLabelGutter = getValueLabelGutter();
 
-      const rangeStart =
-        margin.left + valueLabelGutter;
+      const rangeStart = mode === "non-negative"
+        ? margin.left
+        : margin.left + valueLabelGutter;
 
       const rangeEnd =
         WIDTH -
