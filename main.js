@@ -880,6 +880,26 @@ const WIDTH = 1280;
         .querySelector("#xAxisModeInput")
         .value;
 
+      if (mode === "non-negative") {
+        const currentExtent = getValueExtents(
+          frame?.values ||
+          Object.fromEntries(
+            ranking.map(item => [
+              item.name,
+              item.value
+            ])
+          )
+        );
+
+        const positiveMagnitude = Math.max(
+          getDynamicAxisMinimumMagnitude(),
+          currentExtent.positiveMagnitude * 1.08,
+          frame?.axisState?.positiveMagnitude || 0
+        );
+
+        return [0, positiveMagnitude];
+      }
+
       if (mode === "fixed") {
         return [...globalXAxisDomain];
       }
@@ -5963,15 +5983,17 @@ const WIDTH = 1280;
           document.querySelector("#xAxisModeInput").value;
 
         const message =
-          mode === "fixed"
-            ? "横轴已固定为全局范围，0 刻度和柱体比例保持稳定。"
-            : mode === "symmetric"
-              ? "横轴已固定为对称全局范围，0 刻度固定在图表中央。"
-              : mode === "smooth-symmetric"
-                ? "已启用平滑动态对称范围：0 固定在中央，正负值保持相同比例。"
-                : mode === "smooth-split"
-                  ? "已启用平滑动态分侧范围：0 固定在中央，正负两侧独立缩放。"
-                  : "已启用自由动态范围：0 刻度可能随数据范围移动。";
+          mode === "non-negative"
+            ? "已启用非负模式：0 刻度固定在最左侧，最大程度延伸正数柱体长度。"
+            : mode === "fixed"
+              ? "横轴已固定为全局范围，0 刻度和柱体比例保持稳定。"
+              : mode === "symmetric"
+                ? "横轴已固定为对称全局范围，0 刻度固定在图表中央。"
+                : mode === "smooth-symmetric"
+                  ? "已启用平滑动态对称范围：0 固定在中央，正负值保持相同比例。"
+                  : mode === "smooth-split"
+                    ? "已启用平滑动态分侧范围：0 固定在中央，正负两侧独立缩放。"
+                    : "已启用自由动态范围：0 刻度可能随数据范围移动。";
 
         setStatus(message);
       });

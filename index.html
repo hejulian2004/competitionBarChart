@@ -57,10 +57,11 @@
         <div class="field">
           <label for="xAxisModeInput">横轴范围</label>
           <select id="xAxisModeInput">
+            <option value="non-negative">非负模式（0 固定在最左侧）</option>
+            <option value="smooth-symmetric" selected>平滑动态对称（推荐，0 固定在中央）</option>
+            <option value="smooth-split">平滑动态分侧（0 固定在中央，正负独立）</option>
             <option value="fixed">固定全局范围</option>
             <option value="symmetric">以 0 为中心对称固定</option>
-            <option value="smooth-symmetric" selected>平滑动态对称（推荐，0 固定）</option>
-            <option value="smooth-split">平滑动态分侧（0 固定，正负独立）</option>
             <option value="dynamic">自由动态（0 可能移动）</option>
           </select>
         </div>
