@@ -150,7 +150,6 @@
           <input id="valueStepInput" type="number" min="0.001" step="0.001" value="1" />
         </div>
 
-
         <div class="field">
           <label for="unitInput">数值单位（可留空）</label>
           <input id="unitInput" type="text" placeholder="例如：亿元、票、万人" />
@@ -185,44 +184,16 @@
         <summary>数据格式与使用说明</summary>
         <div class="hint">
           数据格式：第一行为表头；第一列是时间；后续每列是一个参赛对象。空白值按 0 处理；支持正数、0 和负数。
-                  例如：<strong>年份,Python,Java,Kotlin</strong>。
-                  Excel 文件默认读取第一个工作表。拖动“播放速度”滑块可实时调整速度，拖动“播放进度”可跳转到任意时间点。
-                  横轴默认使用“平滑动态对称”：范围随数据平滑变化，但 0 刻度固定在中央，
-                  正负值保持相同比例；“平滑动态分侧”同样固定 0，但正负两侧独立缩放，
-                  更充分利用空间，不适合用柱长直接比较正负绝对值。“自由动态”会移动 0 刻度。
-                  数值尺度默认为自动：当最大绝对值与
-                  最小非零绝对值相差超过约 1 万倍时，自动启用支持负数和 0 的 Symlog 尺度。
-                  动态范围会随每帧数据缩放，可能造成抖动。
-                  视频导出采用 Canvas 直接逐帧绘制和离线编码，不再执行 SVG → 图片转换；
-                  导出前会显示预计帧数、总时长、文件大小和负载等级，导出过程中可以取消。
-                  帧率和总时长不会受导出计算速度影响；默认优先生成适合 PowerPoint 的 H.264 MP4，
-                  不支持时自动回退到 WebM。
-                  数值标签会根据实际文字宽度自动布局：放得下时显示在柱体内部，
-                  正数靠柱体右端、负数靠柱体左端；放不下时才移到柱外，并严格限制在绘图区内。
-                  左侧主体名称区会按最长名称动态调整，并与柱体保持 36px 独立间距；
-                  名称较短时仍会自动扩大柱体横向空间。
-                  Symlog 等非均匀刻度会按实际像素边界逐项避碰，必要时自动抽稀并倾斜显示。
-                  图表采用统一的演示级视觉样式：独立画布面板、交替行背景、
-                  柱体圆角阴影与高光会同步应用于网页、GIF 和视频。
-                  GIF 同样使用 Canvas 直接绘制，并为整段动画建立固定全局调色板；
-                  停留阶段的重复画面会自动合并，导出过程中可以取消。
-                  GIF 会采用与网页相同的速度倍率、运动比例和缓动曲线；播放速度最高 5×。
-                  默认使用 PowerPoint 稳定模式，有效帧率最高约 30 FPS，避免 Office 中明显慢放；
-                  浏览器优先模式最高约 50 FPS。“显示前几名”输入 0 时显示全部主体。
-                  可通过“0 值主体”开关决定是否显示数值为 0 的对象。
-                  “数值显示步长”设为 1 时按整数显示，
-                  数字采用线性平滑变化；柱体仍使用缓动动画。高速播放或帧率不足时，视觉上可能跳过部分整数。
-                  支持正数、0 和负数：负数柱体从零轴向左延伸。
-                  可在“主体颜色与图标”区域使用颜色选择器，或直接输入 #RRGGBB、RRGGBB、#RGB；
-                  点击圆形区域可为每个主体上传图片，图片会自动居中裁剪为圆形图标；
-                  图标和数值已放大；系统会测量左右剩余空间，必要时自动缩小图标和字号，
-                  极端长单位会进行有限水平压缩，并通过绘图区裁剪兜底，确保不会溢出左右边界。
-                  数值统一显示在柱形条外部：负数在左侧，正数和 0 在右侧；
-                  图标显示在数值文字之前。颜色和图标会同步用于网页、PNG、GIF 和视频。
-                  GIF 导出帧率可输入 1–120 FPS；为确保播放速度准确，超过 GIF 时间精度上限时会自动降低有效帧率，
-                  但不会拉长动画总时长。
-                  主体数量不受限制，页面会自动为每个主体分配不同颜色；
-                  同一批主体重新播放或导出时颜色保持一致。文件仅在你的浏览器本地解析，不会由此页面上传到服务器。
+          例如：<strong>年份,Python,Java,Kotlin</strong>。
+          Excel 文件默认读取第一个工作表。拖动“播放速度”滑块可实时调整速度，拖动“播放进度”可跳转到任意时间点。
+          横轴默认使用“平滑动态对称”：范围随数据平滑变化，但 0 刻度固定在中央，正负值保持相同比例；
+          “平滑动态分侧”同样固定 0，但正负两侧独立缩放，更充分利用空间，不适合用柱长直接比较正负绝对值。
+          “自由动态”会移动 0 刻度。数值尺度默认为自动：当最大绝对值与最小非零绝对值相差超过约 1 万倍时，
+          自动启用支持负数和 0 的 Symlog 尺度。动态范围会随每帧数据缩放，可能造成抖动。
+          视频导出采用 Canvas 直接逐帧绘制和离线编码；默认优先生成适合 PowerPoint 的 H.264 MP4，
+          不支持时自动回退到 WebM。GIF 同样使用 Canvas 直接绘制，并为整段动画建立固定全局调色板。
+          弹幕会在网页、PNG、GIF 和视频中使用统一的独立卡片布局，并与柱形图保留安全间距。
+          文件仅在你的浏览器本地解析，不会由此页面上传到服务器。
         </div>
       </details>
 
@@ -233,16 +204,16 @@
       <div class="stage-actions">
         <button id="loadSampleButton">恢复示例</button>
         <button id="clearDataButton" class="danger">清空全部数据</button>
-                <button id="downloadTemplateButton">下载 CSV 模板</button>
-                <button id="startButton" class="primary">开始播放</button>
-                <button id="pauseButton">暂停</button>
-                <button id="restartButton">重新播放</button>
-                <button id="exportPngButton">导出当前帧 PNG</button>
-                <button id="exportVideoButton" class="primary">导出视频</button>
-                <button id="cancelVideoButton" class="danger" hidden>取消视频导出</button>
-                <button id="exportGifButton">导出动画 GIF</button>
-                <button id="cancelGifButton" class="danger" hidden>取消 GIF 导出</button>
-                <button id="fullscreenButton">全屏演示</button>
+        <button id="downloadTemplateButton">下载 CSV 模板</button>
+        <button id="startButton" class="primary">开始播放</button>
+        <button id="pauseButton">暂停</button>
+        <button id="restartButton">重新播放</button>
+        <button id="exportPngButton">导出当前帧 PNG</button>
+        <button id="exportVideoButton" class="primary">导出视频</button>
+        <button id="cancelVideoButton" class="danger" hidden>取消视频导出</button>
+        <button id="exportGifButton">导出动画 GIF</button>
+        <button id="cancelGifButton" class="danger" hidden>取消 GIF 导出</button>
+        <button id="fullscreenButton">全屏演示</button>
       </div>
 
       <div id="captureArea">
@@ -303,5 +274,6 @@
   </div>
 
   <script src="main.js"></script>
+  <script src="danmaku-fix.js"></script>
 </body>
 </html>
