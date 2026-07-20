@@ -516,6 +516,9 @@
     #captureArea {
       position: relative;
       width: 100%;
+      max-width: 100%;
+      max-height: min(74vh, 700px);
+      margin: 0 auto;
       aspect-ratio: 16 / 9;
       background:
         radial-gradient(circle at 90% 8%, rgba(59, 130, 246, 0.12), transparent 28%),
@@ -527,6 +530,7 @@
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.9),
         0 10px 30px rgba(30, 41, 59, 0.08);
+      transition: width 200ms ease, height 200ms ease, max-height 200ms ease;
     }
 
     #captureArea::after {
@@ -988,7 +992,6 @@
           <input id="valueStepInput" type="number" min="0.001" step="0.001" value="1" />
         </div>
 
-
         <div class="field">
           <label for="unitInput">数值单位（可留空）</label>
           <input id="unitInput" type="text" placeholder="例如：亿元、票、万人" />
@@ -1023,44 +1026,16 @@
         <summary>数据格式与使用说明</summary>
         <div class="hint">
           数据格式：第一行为表头；第一列是时间；后续每列是一个参赛对象。空白值按 0 处理；支持正数、0 和负数。
-                  例如：<strong>年份,Python,Java,Kotlin</strong>。
-                  Excel 文件默认读取第一个工作表。拖动“播放速度”滑块可实时调整速度，拖动“播放进度”可跳转到任意时间点。
-                  横轴默认使用“平滑动态对称”：范围随数据平滑变化，但 0 刻度固定在中央，
-                  正负值保持相同比例；“平滑动态分侧”同样固定 0，但正负两侧独立缩放，
-                  更充分利用空间，不适合用柱长直接比较正负绝对值。“自由动态”会移动 0 刻度。
-                  数值尺度默认为自动：当最大绝对值与
-                  最小非零绝对值相差超过约 1 万倍时，自动启用支持负数和 0 的 Symlog 尺度。
-                  动态范围会随每帧数据缩放，可能造成抖动。
-                  视频导出采用 Canvas 直接逐帧绘制和离线编码，不再执行 SVG → 图片转换；
-                  导出前会显示预计帧数、总时长、文件大小和负载等级，导出过程中可以取消。
-                  帧率和总时长不会受导出计算速度影响；默认优先生成适合 PowerPoint 的 H.264 MP4，
-                  不支持时自动回退到 WebM。
-                  数值标签会根据实际文字宽度自动布局：放得下时显示在柱体内部，
-                  正数靠柱体右端、负数靠柱体左端；放不下时才移到柱外，并严格限制在绘图区内。
-                  左侧主体名称区会按最长名称动态调整，并与柱体保持 36px 独立间距；
-                  名称较短时仍会自动扩大柱体横向空间。
-                  Symlog 等非均匀刻度会按实际像素边界逐项避碰，必要时自动抽稀并倾斜显示。
-                  图表采用统一的演示级视觉样式：独立画布面板、交替行背景、
-                  柱体圆角阴影与高光会同步应用于网页、GIF 和视频。
-                  GIF 同样使用 Canvas 直接绘制，并为整段动画建立固定全局调色板；
-                  停留阶段的重复画面会自动合并，导出过程中可以取消。
-                  GIF 会采用与网页相同的速度倍率、运动比例和缓动曲线；播放速度最高 5×。
-                  默认使用 PowerPoint 稳定模式，有效帧率最高约 30 FPS，避免 Office 中明显慢放；
-                  浏览器优先模式最高约 50 FPS。“显示前几名”输入 0 时显示全部主体。
-                  可通过“0 值主体”开关决定是否显示数值为 0 的对象。
-                  “数值显示步长”设为 1 时按整数显示，
-                  数字采用线性平滑变化；柱体仍使用缓动动画。高速播放或帧率不足时，视觉上可能跳过部分整数。
-                  支持正数、0 和负数：负数柱体从零轴向左延伸。
-                  可在“主体颜色与图标”区域使用颜色选择器，或直接输入 #RRGGBB、RRGGBB、#RGB；
-                  点击圆形区域可为每个主体上传图片，图片会自动居中裁剪为圆形图标；
-                  图标和数值已放大；系统会测量左右剩余空间，必要时自动缩小图标和字号，
-                  极端长单位会进行有限水平压缩，并通过绘图区裁剪兜底，确保不会溢出左右边界。
-                  数值统一显示在柱形条外部：负数在左侧，正数和 0 在右侧；
-                  图标显示在数值文字之前。颜色和图标会同步用于网页、PNG、GIF 和视频。
-                  GIF 导出帧率可输入 1–120 FPS；为确保播放速度准确，超过 GIF 时间精度上限时会自动降低有效帧率，
-                  但不会拉长动画总时长。
-                  主体数量不受限制，页面会自动为每个主体分配不同颜色；
-                  同一批主体重新播放或导出时颜色保持一致。文件仅在你的浏览器本地解析，不会由此页面上传到服务器。
+          例如：<strong>年份,Python,Java,Kotlin</strong>。
+          Excel 文件默认读取第一个工作表。拖动“播放速度”滑块可实时调整速度，拖动“播放进度”可跳转到任意时间点。
+          横轴默认使用“平滑动态对称”：范围随数据平滑变化，但 0 刻度固定在中央，正负值保持相同比例；
+          “平滑动态分侧”同样固定 0，但正负两侧独立缩放，更充分利用空间，不适合用柱长直接比较正负绝对值。
+          “自由动态”会移动 0 刻度。数值尺度默认为自动：当最大绝对值与最小非零绝对值相差超过约 1 万倍时，
+          自动启用支持负数和 0 的 Symlog 尺度。动态范围会随每帧数据缩放，可能造成抖动。
+          视频导出采用 Canvas 直接逐帧绘制和离线编码；默认优先生成适合 PowerPoint 的 H.264 MP4，
+          不支持时自动回退到 WebM。GIF 同样使用 Canvas 直接绘制，并为整段动画建立固定全局调色板。
+          弹幕会在网页、PNG、GIF 和视频中使用统一的独立卡片布局，并与柱形图保留安全间距。
+          文件仅在你的浏览器本地解析，不会由此页面上传到服务器。
         </div>
       </details>
 
@@ -1071,16 +1046,16 @@
       <div class="stage-actions">
         <button id="loadSampleButton">恢复示例</button>
         <button id="clearDataButton" class="danger">清空全部数据</button>
-                <button id="downloadTemplateButton">下载 CSV 模板</button>
-                <button id="startButton" class="primary">开始播放</button>
-                <button id="pauseButton">暂停</button>
-                <button id="restartButton">重新播放</button>
-                <button id="exportPngButton">导出当前帧 PNG</button>
-                <button id="exportVideoButton" class="primary">导出视频</button>
-                <button id="cancelVideoButton" class="danger" hidden>取消视频导出</button>
-                <button id="exportGifButton">导出动画 GIF</button>
-                <button id="cancelGifButton" class="danger" hidden>取消 GIF 导出</button>
-                <button id="fullscreenButton">全屏演示</button>
+        <button id="downloadTemplateButton">下载 CSV 模板</button>
+        <button id="startButton" class="primary">开始播放</button>
+        <button id="pauseButton">暂停</button>
+        <button id="restartButton">重新播放</button>
+        <button id="exportPngButton">导出当前帧 PNG</button>
+        <button id="exportVideoButton" class="primary">导出视频</button>
+        <button id="cancelVideoButton" class="danger" hidden>取消视频导出</button>
+        <button id="exportGifButton">导出动画 GIF</button>
+        <button id="cancelGifButton" class="danger" hidden>取消 GIF 导出</button>
+        <button id="fullscreenButton">全屏演示</button>
       </div>
 
       <div id="captureArea">
@@ -1140,7 +1115,9 @@
     </section>
   </div>
 
-  <script>
+  
+  
+<script>
     let baseWidth = 1280;
     let WIDTH = 1280;
     let HEIGHT = 720;
@@ -1913,7 +1890,7 @@
         0
       ];
 
-      const maximumTextWidth =
+      let maximumTextWidth =
         d3.max(
           candidates,
           value => measureLogicalText(
@@ -1921,18 +1898,35 @@
             22,
             800
           )
-        ) || 40;
+        ) || 45;
+
+      if (raceData && raceData.length > 0) {
+        categories.forEach(cat => {
+          raceData.forEach(frame => {
+            const v = Number(frame?.values?.[cat]);
+            if (Number.isFinite(v)) {
+              const formatted = formatValue(v);
+              const w = measureLogicalText(formatted, 22, 800);
+              if (w > maximumTextWidth) maximumTextWidth = w;
+            }
+          });
+        });
+      }
+
+      const iconSize = typeof getSvgValueIconSize === "function"
+        ? getSvgValueIconSize()
+        : VALUE_ICON_SIZE;
 
       return Math.max(
-        60,
+        115,
         Math.min(
-          240,
+          280,
           Math.ceil(
             maximumTextWidth +
-            VALUE_ICON_SIZE +
+            iconSize +
             VALUE_ICON_TEXT_GAP +
             VALUE_BAR_GAP +
-            16
+            24
           )
         )
       );
@@ -3129,6 +3123,24 @@
         .attr("width", WIDTH)
         .attr("height", HEIGHT);
 
+      const captureArea = document.querySelector("#captureArea");
+      if (captureArea) {
+        captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
+        if (document.fullscreenElement === captureArea) {
+          captureArea.style.width = "100%";
+          captureArea.style.height = "100%";
+          captureArea.style.maxWidth = "100%";
+          captureArea.style.maxHeight = "100%";
+          captureArea.style.margin = "0";
+        } else {
+          const ratio = WIDTH / HEIGHT;
+          captureArea.style.maxWidth = "100%";
+          captureArea.style.maxHeight = "min(74vh, 700px)";
+          captureArea.style.width = `min(100%, calc(min(74vh, 700px) * ${ratio}))`;
+          captureArea.style.margin = "0 auto";
+        }
+      }
+
       if (raceData && raceData.length > 0) {
         updateResponsiveChartMargins();
         renderFrame(raceData[currentFrameIndex], false);
@@ -3183,7 +3195,7 @@
       );
 
       const valueGutter = getValueLabelGutter();
-      margin.right = Math.max(65, Math.min(260, valueGutter + 16));
+      margin.right = Math.max(115, Math.min(280, valueGutter + 12));
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
@@ -5304,7 +5316,9 @@
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
 
-      const cardHeight = logicalHeight - margin.top - margin.bottom + 60;
+      const yTargetRange = getYScaleTargetRange(ranking.length);
+      const targetHeight = yTargetRange[1] - yTargetRange[0];
+      const cardHeight = Math.min(logicalHeight - margin.top - margin.bottom + 60, targetHeight + 78);
 
       // 独立图表画布面板
       context.save();
@@ -7316,6 +7330,1424 @@
     if (!loadAppState()) {
       applyRows(structuredClone(sampleRows), "示例数据");
     }
+
+</script>
+<script>
+(() => {
+  "use strict";
+
+  const ASPECT_PRESETS = {
+    "16:9": {
+      ratioWidth: 16,
+      ratioHeight: 9,
+      baseUnit: 80,
+      label: "16:9",
+      video: [
+        { value: "1280x720", label: "1280×720（标准）", quality: "standard" },
+        { value: "1920x1080", label: "1920×1080（高清）", quality: "high" }
+      ],
+      gif: { width: 960, height: 540 }
+    },
+    "3:4": {
+      ratioWidth: 3,
+      ratioHeight: 4,
+      baseUnit: 270,
+      label: "3:4",
+      video: [
+        { value: "810x1080", label: "810×1080（标准）", quality: "standard" },
+        { value: "1080x1440", label: "1080×1440（高清）", quality: "high" }
+      ],
+      gif: { width: 540, height: 720 }
+    },
+    "9:16": {
+      ratioWidth: 9,
+      ratioHeight: 16,
+      baseUnit: 80,
+      label: "9:16",
+      video: [
+        { value: "720x1280", label: "720×1280（标准）", quality: "standard" },
+        { value: "1080x1920", label: "1080×1920（高清）", quality: "high" }
+      ],
+      gif: { width: 540, height: 960 }
+    },
+    "4:5": {
+      ratioWidth: 4,
+      ratioHeight: 5,
+      baseUnit: 216,
+      label: "4:5",
+      video: [
+        { value: "864x1080", label: "864×1080（标准）", quality: "standard" },
+        { value: "1080x1350", label: "1080×1350（高清）", quality: "high" }
+      ],
+      gif: { width: 576, height: 720 }
+    }
+  };
+
+  const DANMAKU_BASE_HEIGHT = 58;
+  const DANMAKU_BASE_RADIUS = 12;
+  const DANMAKU_BASE_MAX_WIDTH = 620;
+  const DANMAKU_BASE_MIN_WIDTH = 180;
+  const DANMAKU_BASE_PADDING = 16;
+  const DANMAKU_BASE_SIDE_INSET = 28;
+  const DANMAKU_BASE_CHART_GAP = 18;
+  const DANMAKU_FADE_START = 0.70;
+  const DANMAKU_FADE_END = 0.94;
+  const DATE_RIGHT_PADDING = 24;
+  const DATE_BOTTOM_PADDING = 18;
+  const MAX_DANMAKU_CACHE_ITEMS = 64;
+
+  const originalUpdateResponsiveChartMargins = updateResponsiveChartMargins;
+  const originalRenderFrame = renderFrame;
+  const originalDrawDirectCanvasVideoFrame = drawDirectCanvasVideoFrame;
+  const originalGetYScaleTargetRange = getYScaleTargetRange;
+
+  let lastLayoutSignature = "";
+  let applyingAspectGeometry = false;
+  const danmakuContentCache = new Map();
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function smoothstep(value) {
+    const t = clamp(value, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  function getAspectPreset() {
+    const mode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+    return ASPECT_PRESETS[mode] || ASPECT_PRESETS["16:9"];
+  }
+
+  function getSelectedScale() {
+    const raw = Number(document.querySelector("#chartWidthScaleInput")?.value || 100);
+    return Number.isFinite(raw) ? clamp(raw, 70, 160) : 100;
+  }
+
+  function getExactLogicalDimensions() {
+    const preset = getAspectPreset();
+    const unit = Math.max(1, Math.round(preset.baseUnit * getSelectedScale() / 100));
+    return {
+      width: preset.ratioWidth * unit,
+      height: preset.ratioHeight * unit
+    };
+  }
+
+  function getCurrentVideoQuality() {
+    const select = document.querySelector("#videoResolutionInput");
+    const selected = select?.selectedOptions?.[0];
+    if (selected?.dataset.quality) return selected.dataset.quality;
+
+    const [width, height] = String(select?.value || "").split("x").map(Number);
+    return width * height >= 1_500_000 ? "high" : "standard";
+  }
+
+  function syncVideoResolutionOptions() {
+    const select = document.querySelector("#videoResolutionInput");
+    if (!select) return;
+
+    const preset = getAspectPreset();
+    const desiredQuality = getCurrentVideoQuality();
+    select.replaceChildren();
+
+    preset.video.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.value;
+      option.textContent = `${item.label} · ${preset.label}`;
+      option.dataset.quality = item.quality;
+      option.selected = item.quality === desiredQuality;
+      select.appendChild(option);
+    });
+
+    if (!select.value && select.options.length > 0) {
+      select.selectedIndex = select.options.length - 1;
+    }
+  }
+
+  function parseExactDimensions(value, fallback) {
+    const [rawWidth, rawHeight] = String(value || "").split("x").map(Number);
+    if (!Number.isFinite(rawWidth) || !Number.isFinite(rawHeight)) return fallback;
+    return {
+      width: Math.max(2, Math.round(rawWidth / 2) * 2),
+      height: Math.max(2, Math.round(rawHeight / 2) * 2)
+    };
+  }
+
+  getVideoDimensions = function patchedGetVideoDimensions() {
+    const preset = getAspectPreset();
+    const fallback = parseExactDimensions(
+      preset.video[preset.video.length - 1].value,
+      { width: 1920, height: 1080 }
+    );
+    const selected = parseExactDimensions(
+      document.querySelector("#videoResolutionInput")?.value,
+      fallback
+    );
+    const selectedRatio = selected.width / selected.height;
+    const expectedRatio = preset.ratioWidth / preset.ratioHeight;
+    return Math.abs(selectedRatio - expectedRatio) < 0.001 ? selected : fallback;
+  };
+
+  getGifDimensions = function patchedGetGifDimensions() {
+    return { ...getAspectPreset().gif };
+  };
+
+  function syncCaptureAspectRatio() {
+    const captureArea = document.querySelector("#captureArea");
+    if (!captureArea) return;
+    captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
+    captureArea.style.height = "auto";
+    captureArea.style.minHeight = "0";
+
+    if (document.fullscreenElement === captureArea) {
+      captureArea.style.width = "100%";
+      captureArea.style.height = "100%";
+      captureArea.style.maxWidth = "100%";
+      captureArea.style.maxHeight = "100%";
+      captureArea.style.margin = "0";
+    } else {
+      const ratio = WIDTH / HEIGHT;
+      captureArea.style.maxWidth = "100%";
+      captureArea.style.maxHeight = "min(74vh, 700px)";
+      captureArea.style.width = `min(100%, calc(min(74vh, 700px) * ${ratio}))`;
+      captureArea.style.margin = "0 auto";
+    }
+  }
+
+  function clearDanmakuCache() {
+    danmakuContentCache.clear();
+  }
+
+  function applyExactAspectGeometry(render = true) {
+    if (applyingAspectGeometry) return;
+    applyingAspectGeometry = true;
+
+    try {
+      const preset = getAspectPreset();
+      const dimensions = getExactLogicalDimensions();
+
+      baseWidth = preset.ratioWidth * preset.baseUnit;
+      WIDTH = dimensions.width;
+      HEIGHT = dimensions.height;
+
+      svg
+        .attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
+        .attr("width", WIDTH)
+        .attr("height", HEIGHT)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+      valueLabelClipRect.attr("height", HEIGHT);
+      syncCaptureAspectRatio();
+      clearDanmakuCache();
+
+      const label = document.querySelector("#chartWidthScaleValue");
+      if (label) {
+        label.textContent = `${getSelectedScale()}% · ${preset.label} (${WIDTH}×${HEIGHT}px)`;
+      }
+
+      updateResponsiveChartMargins();
+      if (render && raceData.length > 0) {
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+    } finally {
+      applyingAspectGeometry = false;
+    }
+  }
+
+  function getUiScale() {
+    return clamp(Math.min(WIDTH / 1280, HEIGHT / 720), 0.72, 1.40);
+  }
+
+  function getBottomMargin() {
+    return Math.max(24, Math.min(42, Math.round(HEIGHT * 0.035)));
+  }
+
+  function getLayoutSignature() {
+    const enabled = isDanmakuEnabled() && danmakuMap.size > 0;
+    const title = Boolean(document.querySelector("#titleInput")?.value.trim());
+    const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
+    return [WIDTH, HEIGHT, enabled, title, subtitle, categories.length].join("|");
+  }
+
+  function getDanmakuLayout(key = "") {
+    const title = Boolean(document.querySelector("#titleInput")?.value.trim());
+    const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
+    const headerBottom = subtitle ? 98 : title ? 72 : 18;
+    const uiScale = getUiScale();
+    const cardHeight = Math.round(DANMAKU_BASE_HEIGHT * uiScale);
+    const cardRadius = Math.round(DANMAKU_BASE_RADIUS * uiScale);
+    const padding = Math.round(DANMAKU_BASE_PADDING * uiScale);
+    const sideInset = Math.max(
+      Math.round(DANMAKU_BASE_SIDE_INSET * uiScale),
+      Math.round(WIDTH * 0.022)
+    );
+    const availableWidth = Math.max(
+      Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale),
+      WIDTH - sideInset * 2
+    );
+    const isPortrait = WIDTH < HEIGHT;
+    const cardWidth = (isPortrait || !title)
+      ? Math.max(Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale), Math.min(WIDTH - sideInset * 2, Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale)))
+      : Math.min(Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale), availableWidth);
+    const startX = (isPortrait || !title)
+      ? Math.max(sideInset, Math.round((WIDTH - cardWidth) / 2))
+      : Math.max(sideInset, WIDTH - sideInset - cardWidth);
+    const cardY = headerBottom + Math.round(14 * uiScale);
+    const chartGap = Math.round(DANMAKU_BASE_CHART_GAP * uiScale);
+
+    return {
+      startX,
+      cardY,
+      cardWidth,
+      cardHeight,
+      cardRadius,
+      padding,
+      chartTop: cardY + cardHeight + chartGap + 42,
+      labelText: `节点 · ${key}`,
+      labelOffsetX: padding,
+      labelBaseline: Math.round(cardHeight * 0.33),
+      textOffsetX: padding,
+      textBaseline: Math.round(cardHeight * 0.75),
+      textMaxWidth: Math.max(48, cardWidth - padding * 2),
+      labelFontSize: Math.max(10, Math.round(13 * uiScale)),
+      textFontSize: Math.max(13, Math.round(18 * uiScale)),
+      dotRadius: Math.max(3, Math.round(4 * uiScale)),
+      dotLabelGap: Math.max(8, Math.round(10 * uiScale))
+    };
+  }
+
+  function getPlotPanelBounds() {
+    const top = margin.top - 42;
+    const yTargetRange = getYScaleTargetRange(categories.length);
+    const targetHeight = yTargetRange[1] - yTargetRange[0];
+    const fullHeight = HEIGHT - margin.top - margin.bottom + 60;
+    const cardHeight = Math.min(fullHeight, targetHeight + 78);
+    const bottom = top + cardHeight;
+    return {
+      left: CHART_SIDE_PADDING,
+      right: WIDTH - CHART_SIDE_PADDING,
+      top,
+      bottom,
+      width: WIDTH - CHART_SIDE_PADDING * 2,
+      height: Math.max(1, bottom - top)
+    };
+  }
+
+  function getDateLayout(text = "") {
+    const panel = getPlotPanelBounds();
+    const isPortrait = WIDTH < HEIGHT;
+    const baseFontSize = Math.min(104, WIDTH * 0.115, HEIGHT * 0.145);
+    const maxTextWidth = Math.max(120, panel.width * (isPortrait ? 0.64 : 0.42));
+    const measuredWidth = measureLogicalText(String(text), baseFontSize, 900);
+    const widthScale = measuredWidth > 0
+      ? Math.min(1, maxTextWidth / measuredWidth)
+      : 1;
+
+    return {
+      x: panel.right - DATE_RIGHT_PADDING,
+      y: panel.bottom - DATE_BOTTOM_PADDING,
+      fontSize: Math.max(32, Math.floor(baseFontSize * widthScale)),
+      maxTextWidth
+    };
+  }
+
+  function applyDateLayout(text = timeLabel.text()) {
+    const layout = getDateLayout(text);
+    timeLabel
+      .attr("x", layout.x)
+      .attr("y", layout.y)
+      .attr("text-anchor", "end")
+      .style("font-size", `${layout.fontSize}px`)
+      .attr("textLength", null)
+      .attr("lengthAdjust", null);
+
+    if (measureLogicalText(String(text), layout.fontSize, 900) > layout.maxTextWidth) {
+      timeLabel
+        .attr("textLength", layout.maxTextWidth)
+        .attr("lengthAdjust", "spacingAndGlyphs");
+    }
+  }
+
+  function applyChartGeometry() {
+    const panel = getPlotPanelBounds();
+    plotSurface
+      .attr("x", panel.left)
+      .attr("y", panel.top)
+      .attr("width", panel.width)
+      .attr("height", panel.height);
+
+    applyDateLayout();
+    valueLabelClipRect
+      .attr("x", CHART_SIDE_PADDING)
+      .attr("width", Math.max(1, WIDTH - CHART_SIDE_PADDING * 2))
+      .attr("height", HEIGHT);
+    xScale.range([margin.left, WIDTH - margin.right]);
+    yScale.range(getYScaleTargetRange(categories.length));
+    syncCaptureAspectRatio();
+  }
+
+  updateResponsiveChartMargins = function patchedUpdateResponsiveChartMargins() {
+    originalUpdateResponsiveChartMargins();
+    margin.bottom = getBottomMargin();
+
+    if (isDanmakuEnabled() && danmakuMap.size > 0) {
+      margin.top = getDanmakuLayout().chartTop;
+    }
+
+    applyChartGeometry();
+    lastLayoutSignature = getLayoutSignature();
+  };
+
+  function ensureLayout() {
+    if (getLayoutSignature() !== lastLayoutSignature) {
+      updateResponsiveChartMargins();
+      clearDanmakuCache();
+    }
+  }
+
+  function getDanmakuEntry(frame) {
+    if (!frame) return null;
+    const key = getDanmakuKey(frame.time);
+    return key && danmakuMap.has(key)
+      ? { key, text: String(danmakuMap.get(key) ?? "") }
+      : null;
+  }
+
+  function renderSvgDanmaku(frame) {
+    danmakuGroup.selectAll("*").remove();
+    const entry = isDanmakuEnabled() ? getDanmakuEntry(frame) : null;
+    if (!entry) {
+      danmakuGroup.style("display", "none");
+      return;
+    }
+
+    const layout = getDanmakuLayout(entry.key);
+    danmakuGroup.style("display", null);
+
+    danmakuGroup.append("rect")
+      .attr("x", layout.startX)
+      .attr("y", layout.cardY)
+      .attr("width", layout.cardWidth)
+      .attr("height", layout.cardHeight)
+      .attr("rx", layout.cardRadius)
+      .attr("fill", "#eff6ff")
+      .attr("stroke", "#bfdbfe")
+      .attr("stroke-width", 1);
+
+    const dotX = layout.startX + layout.labelOffsetX + layout.dotRadius;
+    const dotY = layout.cardY + layout.labelBaseline - layout.dotRadius;
+
+    danmakuGroup.append("circle")
+      .attr("cx", dotX)
+      .attr("cy", dotY)
+      .attr("r", layout.dotRadius)
+      .attr("fill", "#2563eb");
+
+    danmakuGroup.append("text")
+      .attr("x", dotX + layout.dotRadius + layout.dotLabelGap)
+      .attr("y", layout.cardY + layout.labelBaseline)
+      .attr("font-size", layout.labelFontSize)
+      .attr("font-weight", 700)
+      .attr("fill", "#2563eb")
+      .text(layout.labelText);
+
+    const textElement = danmakuGroup.append("text")
+      .attr("x", layout.startX + layout.textOffsetX)
+      .attr("y", layout.cardY + layout.textBaseline)
+      .attr("font-size", layout.textFontSize)
+      .attr("font-weight", 800)
+      .attr("fill", "#0f172a")
+      .text(entry.text);
+
+    if (measureLogicalText(entry.text, layout.textFontSize, 800) > layout.textMaxWidth) {
+      textElement
+        .attr("textLength", layout.textMaxWidth)
+        .attr("lengthAdjust", "spacingAndGlyphs");
+    }
+  }
+
+  renderFrame = function patchedRenderFrame(frame, animate = true) {
+    ensureLayout();
+    const checkbox = document.querySelector("#showDanmakuInput");
+    const enabled = checkbox ? checkbox.checked : true;
+    if (checkbox && enabled) checkbox.checked = false;
+
+    try {
+      originalRenderFrame(frame, animate);
+    } finally {
+      if (checkbox && enabled) checkbox.checked = true;
+    }
+
+    applyDateLayout(frame?.time || "");
+    renderSvgDanmaku(frame);
+  };
+
+  function roundedRectPath(context, x, y, width, height, radius) {
+    const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
+    context.beginPath();
+    context.moveTo(x + safeRadius, y);
+    context.lineTo(x + width - safeRadius, y);
+    context.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+    context.lineTo(x + width, y + height - safeRadius);
+    context.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+    context.lineTo(x + safeRadius, y + height);
+    context.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+    context.lineTo(x, y + safeRadius);
+    context.quadraticCurveTo(x, y, x + safeRadius, y);
+    context.closePath();
+  }
+
+  function getPixelDanmakuLayout(outputWidth, outputHeight, entry) {
+    const logical = getDanmakuLayout(entry?.key || "");
+    const scaleX = outputWidth / WIDTH;
+    const scaleY = outputHeight / HEIGHT;
+    const fontScale = Math.min(scaleX, scaleY);
+
+    return {
+      x: Math.round(logical.startX * scaleX),
+      y: Math.round(logical.cardY * scaleY),
+      width: Math.max(1, Math.round(logical.cardWidth * scaleX)),
+      height: Math.max(1, Math.round(logical.cardHeight * scaleY)),
+      radius: Math.max(1, Math.round(logical.cardRadius * fontScale)),
+      paddingX: Math.max(1, Math.round(logical.labelOffsetX * scaleX)),
+      labelBaseline: Math.round(logical.labelBaseline * scaleY),
+      textBaseline: Math.round(logical.textBaseline * scaleY),
+      labelFontSize: Math.max(8, Math.round(logical.labelFontSize * fontScale)),
+      textFontSize: Math.max(10, Math.round(logical.textFontSize * fontScale)),
+      dotRadius: Math.max(2, Math.round(logical.dotRadius * fontScale)),
+      dotLabelGap: Math.max(5, Math.round(logical.dotLabelGap * scaleX)),
+      maxTextWidth: Math.max(20, Math.round(logical.textMaxWidth * scaleX)),
+      lineWidth: Math.max(1, Math.round(fontScale))
+    };
+  }
+
+  function getDanmakuCacheKey(outputWidth, outputHeight, entry, pixelLayout) {
+    return [
+      outputWidth,
+      outputHeight,
+      WIDTH,
+      HEIGHT,
+      pixelLayout.width,
+      pixelLayout.height,
+      entry.key,
+      entry.text
+    ].join("|");
+  }
+
+  function trimDanmakuCache() {
+    while (danmakuContentCache.size > MAX_DANMAKU_CACHE_ITEMS) {
+      const firstKey = danmakuContentCache.keys().next().value;
+      danmakuContentCache.delete(firstKey);
+    }
+  }
+
+  function getCachedDanmakuContent(outputWidth, outputHeight, entry, pixelLayout) {
+    const cacheKey = getDanmakuCacheKey(
+      outputWidth,
+      outputHeight,
+      entry,
+      pixelLayout
+    );
+    const cached = danmakuContentCache.get(cacheKey);
+    if (cached) return cached;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = pixelLayout.width;
+    canvas.height = pixelLayout.height;
+    const context = canvas.getContext("2d", { alpha: true });
+    if (!context) return null;
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.textBaseline = "alphabetic";
+    context.textAlign = "left";
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+
+    const dotX = pixelLayout.paddingX + pixelLayout.dotRadius;
+    const dotY = pixelLayout.labelBaseline - pixelLayout.dotRadius;
+    context.fillStyle = "#2563eb";
+    context.beginPath();
+    context.arc(dotX, dotY, pixelLayout.dotRadius, 0, Math.PI * 2);
+    context.fill();
+
+    context.font =
+      `700 ${pixelLayout.labelFontSize}px ` +
+      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+    context.fillText(
+      `节点 · ${entry.key}`,
+      dotX + pixelLayout.dotRadius + pixelLayout.dotLabelGap,
+      pixelLayout.labelBaseline
+    );
+
+    context.fillStyle = "#0f172a";
+    context.font =
+      `800 ${pixelLayout.textFontSize}px ` +
+      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+    context.fillText(
+      entry.text,
+      pixelLayout.paddingX,
+      pixelLayout.textBaseline,
+      pixelLayout.maxTextWidth
+    );
+
+    danmakuContentCache.set(cacheKey, canvas);
+    trimDanmakuCache();
+    return canvas;
+  }
+
+  function drawDanmakuShell(context, pixelLayout, alpha) {
+    if (alpha <= 0.001) return;
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = clamp(alpha, 0, 1);
+
+    const inset = pixelLayout.lineWidth / 2;
+    roundedRectPath(
+      context,
+      pixelLayout.x + inset,
+      pixelLayout.y + inset,
+      Math.max(1, pixelLayout.width - pixelLayout.lineWidth),
+      Math.max(1, pixelLayout.height - pixelLayout.lineWidth),
+      pixelLayout.radius
+    );
+    context.fillStyle = "#eff6ff";
+    context.fill();
+    context.strokeStyle = "#bfdbfe";
+    context.lineWidth = pixelLayout.lineWidth;
+    context.stroke();
+    context.restore();
+  }
+
+  function drawDanmakuContent(context, outputWidth, outputHeight, entry, alpha) {
+    if (!entry || alpha <= 0.001) return;
+    const pixelLayout = getPixelDanmakuLayout(outputWidth, outputHeight, entry);
+    const content = getCachedDanmakuContent(
+      outputWidth,
+      outputHeight,
+      entry,
+      pixelLayout
+    );
+    if (!content) return;
+
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = clamp(alpha, 0, 1);
+    context.drawImage(content, pixelLayout.x, pixelLayout.y);
+    context.restore();
+  }
+
+  function sameDanmakuEntry(a, b) {
+    return Boolean(a && b && a.key === b.key && a.text === b.text);
+  }
+
+  function getDanmakuTransition(fromFrame, toFrame, linearProgress) {
+    const fromEntry = getDanmakuEntry(fromFrame);
+    const toEntry = toFrame ? getDanmakuEntry(toFrame) : fromEntry;
+
+    if (sameDanmakuEntry(fromEntry, toEntry)) {
+      return {
+        shellAlpha: fromEntry ? 1 : 0,
+        layers: fromEntry ? [{ entry: fromEntry, alpha: 1 }] : []
+      };
+    }
+
+    const progress = clamp(Number(linearProgress) || 0, 0, 1);
+
+    if (fromEntry && toEntry) {
+      const blend = smoothstep((progress - 0.35) / 0.30);
+      return {
+        shellAlpha: 1,
+        layers: [
+          { entry: fromEntry, alpha: 1 - blend },
+          { entry: toEntry, alpha: blend }
+        ]
+      };
+    }
+
+    if (fromEntry) {
+      const alpha = progress < 0.45 ? 1 : smoothstep(1 - (progress - 0.45) / 0.15);
+      return {
+        shellAlpha: alpha,
+        layers: [{ entry: fromEntry, alpha }]
+      };
+    }
+
+    if (toEntry) {
+      const alpha = progress < 0.40 ? 0 : smoothstep((progress - 0.40) / 0.15);
+      return {
+        shellAlpha: alpha,
+        layers: [{ entry: toEntry, alpha }]
+      };
+    }
+
+    return { shellAlpha: 0, layers: [] };
+  }
+
+  function drawStableDanmaku(
+    context,
+    outputWidth,
+    outputHeight,
+    fromFrame,
+    toFrame,
+    linearProgress
+  ) {
+    const transition = getDanmakuTransition(
+      fromFrame,
+      toFrame,
+      linearProgress
+    );
+    if (transition.shellAlpha <= 0.001 || transition.layers.length === 0) return;
+
+    const placementEntry = transition.layers[0].entry;
+    const pixelLayout = getPixelDanmakuLayout(
+      outputWidth,
+      outputHeight,
+      placementEntry
+    );
+    drawDanmakuShell(context, pixelLayout, transition.shellAlpha);
+    transition.layers.forEach(layer => {
+      drawDanmakuContent(
+        context,
+        outputWidth,
+        outputHeight,
+        layer.entry,
+        layer.alpha
+      );
+    });
+  }
+
+  function getTimelineActiveFrame(fromFrame, toFrame, linearProgress) {
+    if (!toFrame) return fromFrame;
+    return (Number(linearProgress) || 0) >= 0.82 ? toFrame : fromFrame;
+  }
+
+  function drawPixelAlignedDate(context, outputWidth, outputHeight, text) {
+    if (!text) return;
+    const logical = getDateLayout(text);
+    const scaleX = outputWidth / WIDTH;
+    const scaleY = outputHeight / HEIGHT;
+    const fontScale = Math.min(scaleX, scaleY);
+
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.globalAlpha = 0.20;
+    context.fillStyle = "#2563eb";
+    context.font =
+      `900 ${Math.max(18, Math.round(logical.fontSize * fontScale))}px ` +
+      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+    context.textAlign = "right";
+    context.textBaseline = "alphabetic";
+    context.fillText(
+      String(text),
+      Math.round(logical.x * scaleX),
+      Math.round(logical.y * scaleY),
+      Math.max(40, Math.round(logical.maxTextWidth * scaleX))
+    );
+    context.restore();
+  }
+
+  drawDirectCanvasVideoFrame = function patchedDrawDirectCanvasVideoFrame(
+    context,
+    outputWidth,
+    outputHeight,
+    fromFrame,
+    toFrame,
+    easedProgress,
+    linearProgress
+  ) {
+    ensureLayout();
+    const checkbox = document.querySelector("#showDanmakuInput");
+    const enabled = checkbox ? checkbox.checked : true;
+    const hiddenFrom = { ...(fromFrame || {}), time: "" };
+    const hiddenTo = { ...(toFrame || fromFrame || {}), time: "" };
+    if (checkbox && enabled) checkbox.checked = false;
+    try {
+      originalDrawDirectCanvasVideoFrame(
+        context,
+        outputWidth,
+        outputHeight,
+        hiddenFrom,
+        hiddenTo,
+        easedProgress,
+        linearProgress
+      );
+    } finally {
+      if (checkbox && enabled) checkbox.checked = true;
+    }
+
+    const activeFrame = getTimelineActiveFrame(
+      fromFrame,
+      toFrame,
+      linearProgress
+    );
+    drawPixelAlignedDate(
+      context,
+      outputWidth,
+      outputHeight,
+      activeFrame?.time
+    );
+
+    if (enabled) {
+      drawStableDanmaku(
+        context,
+        outputWidth,
+        outputHeight,
+        fromFrame,
+        toFrame,
+        linearProgress
+      );
+    }
+  };
+
+  function syncAspectAndExportSettings() {
+    syncVideoResolutionOptions();
+    applyExactAspectGeometry(true);
+  }
+
+  document.querySelector("#aspectRatioModeInput")
+    ?.addEventListener("change", syncAspectAndExportSettings);
+  document.querySelector("#chartWidthScaleInput")
+    ?.addEventListener("input", () => applyExactAspectGeometry(true));
+  document.querySelector("#titleInput")
+    ?.addEventListener("input", clearDanmakuCache);
+  document.querySelector("#subtitleInput")
+    ?.addEventListener("input", clearDanmakuCache);
+  document.querySelector("#danmakuTextInput")
+    ?.addEventListener("input", clearDanmakuCache);
+
+  if (document.fonts?.ready) {
+    document.fonts.ready.then(clearDanmakuCache).catch(() => {});
+  }
+
+  window.addEventListener("resize", syncCaptureAspectRatio);
+  document.addEventListener("fullscreenchange", syncCaptureAspectRatio);
+
+  syncVideoResolutionOptions();
+  applyExactAspectGeometry(false);
+  updateResponsiveChartMargins();
+  if (raceData.length > 0) {
+    renderFrame(raceData[currentFrameIndex], false);
+  }
+})();
+
+</script>
+<script>
+(() => {
+  "use strict";
+
+  const entryScript = document.currentScript;
+  const baseUrl = new URL(".", entryScript?.src || window.location.href);
+
+  function loadClassicScript(filename, onload) {
+    const script = document.createElement("script");
+    script.src = new URL(filename, baseUrl).href;
+    script.async = false;
+    script.onload = onload;
+    script.onerror = () => console.error(`${filename} 加载失败`);
+    document.head.appendChild(script);
+  }
+
+  loadClassicScript("main-core.js", () => {
+    const core = {
+      updateMargins: updateResponsiveChartMargins,
+      renderFrame,
+      drawCanvasFrame: drawDirectCanvasVideoFrame
+    };
+
+    loadClassicScript("main-layout-base.js", () => {
+      const MAX_LINES = 3;
+      const CACHE_LIMIT = 96;
+      const FADE_START = 0.70;
+      const FADE_END = 0.94;
+      const contentCache = new Map();
+      let layoutSignature = "";
+
+      const clamp = (value, minimum, maximum) =>
+        Math.max(minimum, Math.min(maximum, value));
+
+      const smoothstep = value => {
+        const t = clamp(value, 0, 1);
+        return t * t * (3 - 2 * t);
+      };
+
+      function getAspectMode() {
+        return document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+      }
+
+      function getUiScale() {
+        return clamp(Math.min(WIDTH / 1280, HEIGHT / 720), 0.72, 1.40);
+      }
+
+      function wrapText(text, maximumWidth, fontSize, maximumLines = MAX_LINES) {
+        const characters = Array.from(String(text ?? "").trim());
+        if (characters.length === 0) return [];
+
+        const lines = [];
+        let current = "";
+        let index = 0;
+
+        while (index < characters.length) {
+          const candidate = current + characters[index];
+          if (!current || measureLogicalText(candidate, fontSize, 800) <= maximumWidth) {
+            current = candidate;
+            index += 1;
+            continue;
+          }
+
+          lines.push(current);
+          current = "";
+
+          if (lines.length >= maximumLines - 1) {
+            let finalLine = characters.slice(index).join("");
+            while (
+              finalLine.length > 0 &&
+              measureLogicalText(`${finalLine}…`, fontSize, 800) > maximumWidth
+            ) {
+              finalLine = Array.from(finalLine).slice(0, -1).join("");
+            }
+            lines.push(`${finalLine}…`);
+            return lines;
+          }
+        }
+
+        if (current) lines.push(current);
+        return lines.slice(0, maximumLines);
+      }
+
+      function getBaseMetrics() {
+        const scale = getUiScale();
+        const padding = Math.max(14, Math.round(18 * scale));
+        const labelFontSize = Math.max(11, Math.round(14 * scale));
+        const textFontSize = Math.max(15, Math.round(20 * scale));
+        const lineHeight = Math.max(21, Math.round(26 * scale));
+        const sideInset = Math.max(Math.round(28 * scale), Math.round(WIDTH * 0.03));
+        const availableWidth = Math.max(Math.round(200 * scale), WIDTH - sideInset * 2);
+        const cardWidth = WIDTH < HEIGHT
+          ? availableWidth
+          : Math.min(Math.round(720 * scale), availableWidth);
+
+        return {
+          scale,
+          padding,
+          labelFontSize,
+          textFontSize,
+          lineHeight,
+          cardWidth,
+          textWidth: Math.max(56, cardWidth - padding * 2)
+        };
+      }
+
+      function getReservedLineCount(metrics = getBaseMetrics()) {
+        let count = 1;
+        danmakuMap.forEach(text => {
+          count = Math.max(
+            count,
+            wrapText(text, metrics.textWidth, metrics.textFontSize).length || 1
+          );
+        });
+        return Math.min(MAX_LINES, count);
+      }
+
+      function getDanmakuLayout(key = "", text = "") {
+        const metrics = getBaseMetrics();
+        const lineCount = getReservedLineCount(metrics);
+        const title = Boolean(document.querySelector("#titleInput")?.value.trim());
+        const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
+        const headerBottom = subtitle ? 104 : title ? 72 : 22;
+        const labelArea = Math.max(22, Math.round(25 * metrics.scale));
+        const labelGap = Math.max(6, Math.round(8 * metrics.scale));
+        const cardHeight =
+          metrics.padding +
+          labelArea +
+          labelGap +
+          lineCount * metrics.lineHeight +
+          metrics.padding;
+        const cardY = headerBottom + Math.max(10, Math.round(12 * metrics.scale));
+        const textLines = wrapText(
+          text,
+          metrics.textWidth,
+          metrics.textFontSize,
+          lineCount
+        );
+
+        return {
+          x: Math.round((WIDTH - metrics.cardWidth) / 2),
+          y: cardY,
+          width: metrics.cardWidth,
+          height: cardHeight,
+          radius: Math.max(10, Math.round(14 * metrics.scale)),
+          padding: metrics.padding,
+          labelFontSize: metrics.labelFontSize,
+          textFontSize: metrics.textFontSize,
+          lineHeight: metrics.lineHeight,
+          labelBaseline: metrics.padding + metrics.labelFontSize,
+          textBaseline:
+            metrics.padding + labelArea + labelGap + metrics.textFontSize,
+          dotRadius: Math.max(3, Math.round(4.5 * metrics.scale)),
+          dotGap: Math.max(8, Math.round(10 * metrics.scale)),
+          textLines,
+          labelText: `节点 · ${key}`,
+          chartTop:
+            cardY +
+            cardHeight +
+            Math.max(16, Math.round(20 * metrics.scale)) +
+            42
+        };
+      }
+
+      function getPanelBounds() {
+        const liftRatio = {
+          "16:9": 0,
+          "3:4": 0.065,
+          "4:5": 0.030,
+          "9:16": 0.020
+        }[getAspectMode()] || 0;
+        const top = margin.top - 42;
+        const bottom = Math.max(
+          top + 180,
+          HEIGHT - margin.bottom + 18 - Math.round(HEIGHT * liftRatio)
+        );
+        return {
+          left: CHART_SIDE_PADDING,
+          right: WIDTH - CHART_SIDE_PADDING,
+          top,
+          bottom,
+          width: WIDTH - CHART_SIDE_PADDING * 2,
+          height: bottom - top
+        };
+      }
+
+      function getDateLayout(text = "") {
+        const panel = getPanelBounds();
+        const portrait = WIDTH < HEIGHT;
+        const baseFontSize = Math.min(104, WIDTH * 0.115, HEIGHT * 0.145);
+        const maximumWidth = Math.max(120, panel.width * (portrait ? 0.64 : 0.42));
+        const measured = measureLogicalText(String(text), baseFontSize, 900);
+        const scale = measured > 0 ? Math.min(1, maximumWidth / measured) : 1;
+        const extraInsetRatio = {
+          "16:9": 0,
+          "3:4": 0.030,
+          "4:5": 0.018,
+          "9:16": 0.014
+        }[getAspectMode()] || 0;
+
+        return {
+          x: panel.right - 24,
+          y: panel.bottom - 18 - Math.round(HEIGHT * extraInsetRatio),
+          fontSize: Math.max(32, Math.floor(baseFontSize * scale)),
+          maximumWidth
+        };
+      }
+
+      function getSignature() {
+        const danmaku = Array.from(danmakuMap.entries())
+          .map(([key, value]) => `${key}:${value}`)
+          .join("\u0001");
+        return [
+          WIDTH,
+          HEIGHT,
+          isDanmakuEnabled(),
+          document.querySelector("#titleInput")?.value || "",
+          document.querySelector("#subtitleInput")?.value || "",
+          categories.length,
+          danmaku
+        ].join("|");
+      }
+
+      function applyDateLayout(text = timeLabel.text()) {
+        const layout = getDateLayout(text);
+        timeLabel
+          .attr("x", layout.x)
+          .attr("y", layout.y)
+          .attr("text-anchor", "end")
+          .style("font-size", `${layout.fontSize}px`)
+          .attr("textLength", null)
+          .attr("lengthAdjust", null);
+        if (
+          measureLogicalText(String(text), layout.fontSize, 900) >
+          layout.maximumWidth
+        ) {
+          timeLabel
+            .attr("textLength", layout.maximumWidth)
+            .attr("lengthAdjust", "spacingAndGlyphs");
+        }
+      }
+
+      getYScaleTargetRange = function integratedYRange() {
+        const panel = getPanelBounds();
+        return [margin.top, Math.max(margin.top + 1, panel.bottom - 18)];
+      };
+
+      updateResponsiveChartMargins = function integratedMargins() {
+        const checkbox = document.querySelector("#showDanmakuInput");
+        const enabled = checkbox ? checkbox.checked : true;
+        if (checkbox && enabled) checkbox.checked = false;
+        try {
+          core.updateMargins();
+        } finally {
+          if (checkbox && enabled) checkbox.checked = true;
+        }
+
+        margin.bottom = Math.max(24, Math.min(42, Math.round(HEIGHT * 0.035)));
+        if (enabled && danmakuMap.size > 0) {
+          margin.top = getDanmakuLayout().chartTop;
+        }
+
+        const panel = getPanelBounds();
+        plotSurface
+          .attr("x", panel.left)
+          .attr("y", panel.top)
+          .attr("width", panel.width)
+          .attr("height", panel.height);
+        valueLabelClipRect
+          .attr("x", panel.left)
+          .attr("width", panel.width)
+          .attr("height", HEIGHT);
+        xScale.range([margin.left, WIDTH - margin.right]);
+        yScale.range(getYScaleTargetRange(categories.length));
+        zeroLine.attr("y2", getYScaleTargetRange(categories.length)[1]);
+        applyDateLayout();
+        layoutSignature = getSignature();
+      };
+
+      function ensureLayout() {
+        if (layoutSignature !== getSignature()) {
+          contentCache.clear();
+          updateResponsiveChartMargins();
+        }
+      }
+
+      function getEntry(frame) {
+        if (!frame || !isDanmakuEnabled()) return null;
+        const key = getDanmakuKey(frame.time);
+        return key && danmakuMap.has(key)
+          ? { key, text: String(danmakuMap.get(key) ?? "") }
+          : null;
+      }
+
+      function renderSvgDanmaku(frame) {
+        danmakuGroup.selectAll("*").remove();
+        const entry = getEntry(frame);
+        if (!entry) {
+          danmakuGroup.style("display", "none");
+          return;
+        }
+
+        const layout = getDanmakuLayout(entry.key, entry.text);
+        danmakuGroup.style("display", null);
+        danmakuGroup.append("rect")
+          .attr("x", layout.x)
+          .attr("y", layout.y)
+          .attr("width", layout.width)
+          .attr("height", layout.height)
+          .attr("rx", layout.radius)
+          .attr("fill", "#eff6ff")
+          .attr("stroke", "#bfdbfe");
+
+        const dotX = layout.x + layout.padding + layout.dotRadius;
+        const dotY = layout.y + layout.labelBaseline - layout.dotRadius;
+        danmakuGroup.append("circle")
+          .attr("cx", dotX)
+          .attr("cy", dotY)
+          .attr("r", layout.dotRadius)
+          .attr("fill", "#2563eb");
+        danmakuGroup.append("text")
+          .attr("x", dotX + layout.dotRadius + layout.dotGap)
+          .attr("y", layout.y + layout.labelBaseline)
+          .attr("font-size", layout.labelFontSize)
+          .attr("font-weight", 700)
+          .attr("fill", "#2563eb")
+          .text(layout.labelText);
+
+        const body = danmakuGroup.append("text")
+          .attr("font-size", layout.textFontSize)
+          .attr("font-weight", 800)
+          .attr("fill", "#0f172a");
+        layout.textLines.forEach((line, index) => {
+          body.append("tspan")
+            .attr("x", layout.x + layout.padding)
+            .attr("y", layout.y + layout.textBaseline + index * layout.lineHeight)
+            .text(line);
+        });
+      }
+
+      renderFrame = function integratedRenderFrame(frame, animate = true) {
+        ensureLayout();
+        const checkbox = document.querySelector("#showDanmakuInput");
+        const enabled = checkbox ? checkbox.checked : true;
+        if (checkbox && enabled) checkbox.checked = false;
+        try {
+          core.renderFrame(frame, animate);
+        } finally {
+          if (checkbox && enabled) checkbox.checked = true;
+        }
+        applyDateLayout(frame?.time || "");
+        renderSvgDanmaku(frame);
+      };
+
+      function roundedPath(context, x, y, width, height, radius) {
+        const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.lineTo(x + width - r, y);
+        context.quadraticCurveTo(x + width, y, x + width, y + r);
+        context.lineTo(x + width, y + height - r);
+        context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        context.lineTo(x + r, y + height);
+        context.quadraticCurveTo(x, y + height, x, y + height - r);
+        context.lineTo(x, y + r);
+        context.quadraticCurveTo(x, y, x + r, y);
+        context.closePath();
+      }
+
+      function getPixelLayout(outputWidth, outputHeight, entry) {
+        const logical = getDanmakuLayout(entry.key, entry.text);
+        const scale = Math.min(outputWidth / WIDTH, outputHeight / HEIGHT);
+        const offsetX = (outputWidth - WIDTH * scale) / 2;
+        const offsetY = (outputHeight - HEIGHT * scale) / 2;
+        return {
+          x: Math.round(offsetX + logical.x * scale),
+          y: Math.round(offsetY + logical.y * scale),
+          width: Math.round(logical.width * scale),
+          height: Math.round(logical.height * scale),
+          radius: Math.round(logical.radius * scale),
+          padding: Math.round(logical.padding * scale),
+          labelBaseline: Math.round(logical.labelBaseline * scale),
+          textBaseline: Math.round(logical.textBaseline * scale),
+          labelFontSize: Math.max(8, Math.round(logical.labelFontSize * scale)),
+          textFontSize: Math.max(10, Math.round(logical.textFontSize * scale)),
+          lineHeight: Math.max(12, Math.round(logical.lineHeight * scale)),
+          dotRadius: Math.max(2, Math.round(logical.dotRadius * scale)),
+          dotGap: Math.max(5, Math.round(logical.dotGap * scale)),
+          textLines: logical.textLines,
+          lineWidth: Math.max(1, Math.round(scale))
+        };
+      }
+
+      function getCachedContent(outputWidth, outputHeight, entry, layout) {
+        const key = [
+          outputWidth,
+          outputHeight,
+          WIDTH,
+          HEIGHT,
+          layout.width,
+          layout.height,
+          entry.key,
+          entry.text
+        ].join("|");
+        if (contentCache.has(key)) return contentCache.get(key);
+
+        const canvas = document.createElement("canvas");
+        canvas.width = layout.width;
+        canvas.height = layout.height;
+        const context = canvas.getContext("2d", { alpha: true });
+        if (!context) return null;
+        context.textAlign = "left";
+        context.textBaseline = "alphabetic";
+
+        const dotX = layout.padding + layout.dotRadius;
+        const dotY = layout.labelBaseline - layout.dotRadius;
+        context.fillStyle = "#2563eb";
+        context.beginPath();
+        context.arc(dotX, dotY, layout.dotRadius, 0, Math.PI * 2);
+        context.fill();
+        context.font =
+          `700 ${layout.labelFontSize}px ` +
+          '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        context.fillText(
+          `节点 · ${entry.key}`,
+          dotX + layout.dotRadius + layout.dotGap,
+          layout.labelBaseline
+        );
+
+        context.fillStyle = "#0f172a";
+        context.font =
+          `800 ${layout.textFontSize}px ` +
+          '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        layout.textLines.forEach((line, index) => {
+          context.fillText(
+            line,
+            layout.padding,
+            layout.textBaseline + index * layout.lineHeight
+          );
+        });
+
+        contentCache.set(key, canvas);
+        while (contentCache.size > CACHE_LIMIT) {
+          contentCache.delete(contentCache.keys().next().value);
+        }
+        return canvas;
+      }
+
+      function drawDanmaku(context, outputWidth, outputHeight, entry, alpha, shell = false) {
+        if (!entry || alpha <= 0.001) return;
+        const layout = getPixelLayout(outputWidth, outputHeight, entry);
+        context.save();
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.globalAlpha = clamp(alpha, 0, 1);
+
+        if (shell) {
+          const inset = layout.lineWidth / 2;
+          roundedPath(
+            context,
+            layout.x + inset,
+            layout.y + inset,
+            layout.width - layout.lineWidth,
+            layout.height - layout.lineWidth,
+            layout.radius
+          );
+          context.fillStyle = "#eff6ff";
+          context.fill();
+          context.strokeStyle = "#bfdbfe";
+          context.lineWidth = layout.lineWidth;
+          context.stroke();
+        } else {
+          const content = getCachedContent(outputWidth, outputHeight, entry, layout);
+          if (content) context.drawImage(content, layout.x, layout.y);
+        }
+        context.restore();
+      }
+
+      function drawStableDanmaku(
+        context,
+        outputWidth,
+        outputHeight,
+        fromFrame,
+        toFrame,
+        linearProgress
+      ) {
+        const fromEntry = getEntry(fromFrame);
+        const toEntry = toFrame ? getEntry(toFrame) : fromEntry;
+        if (!fromEntry && !toEntry) return;
+
+        const same = Boolean(
+          fromEntry &&
+          toEntry &&
+          fromEntry.key === toEntry.key &&
+          fromEntry.text === toEntry.text
+        );
+        if (same) {
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1, true);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1, false);
+          return;
+        }
+
+        const progress = clamp(Number(linearProgress) || 0, 0, 1);
+
+        if (fromEntry && toEntry) {
+          const blend = smoothstep((progress - 0.35) / 0.30);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1, true);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1 - blend, false);
+          drawDanmaku(context, outputWidth, outputHeight, toEntry, blend, false);
+          return;
+        }
+
+        if (fromEntry) {
+          const alpha = progress < 0.45 ? 1 : smoothstep(1 - (progress - 0.45) / 0.15);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, alpha, true);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, alpha, false);
+          return;
+        }
+
+        if (toEntry) {
+          const alpha = progress < 0.40 ? 0 : smoothstep((progress - 0.40) / 0.15);
+          drawDanmaku(context, outputWidth, outputHeight, toEntry, alpha, true);
+          drawDanmaku(context, outputWidth, outputHeight, toEntry, alpha, false);
+          return;
+        }
+      }
+
+      function drawDate(context, outputWidth, outputHeight, text) {
+        if (!text) return;
+        const logical = getDateLayout(text);
+        const scale = Math.min(outputWidth / WIDTH, outputHeight / HEIGHT);
+        const offsetX = (outputWidth - WIDTH * scale) / 2;
+        const offsetY = (outputHeight - HEIGHT * scale) / 2;
+        context.save();
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.globalAlpha = 0.20;
+        context.fillStyle = "#2563eb";
+        context.font =
+          `900 ${Math.max(18, Math.round(logical.fontSize * scale))}px ` +
+          '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        context.textAlign = "right";
+        context.textBaseline = "alphabetic";
+        context.fillText(
+          String(text),
+          Math.round(offsetX + logical.x * scale),
+          Math.round(offsetY + logical.y * scale),
+          Math.round(logical.maximumWidth * scale)
+        );
+        context.restore();
+      }
+
+      drawDirectCanvasVideoFrame = function integratedCanvasFrame(
+        context,
+        outputWidth,
+        outputHeight,
+        fromFrame,
+        toFrame,
+        easedProgress,
+        linearProgress
+      ) {
+        ensureLayout();
+        const checkbox = document.querySelector("#showDanmakuInput");
+        const enabled = checkbox ? checkbox.checked : true;
+        if (checkbox && enabled) checkbox.checked = false;
+        try {
+          core.drawCanvasFrame(
+            context,
+            outputWidth,
+            outputHeight,
+            { ...(fromFrame || {}), time: "" },
+            { ...(toFrame || fromFrame || {}), time: "" },
+            easedProgress,
+            linearProgress
+          );
+        } finally {
+          if (checkbox && enabled) checkbox.checked = true;
+        }
+
+        const activeFrame = !toFrame || (Number(linearProgress) || 0) < 0.82
+          ? fromFrame
+          : toFrame;
+        drawDate(context, outputWidth, outputHeight, activeFrame?.time);
+        if (enabled) {
+          drawStableDanmaku(
+            context,
+            outputWidth,
+            outputHeight,
+            fromFrame,
+            toFrame,
+            linearProgress
+          );
+        }
+      };
+
+      document.querySelector("#titleInput")
+        ?.addEventListener("input", () => {
+          layoutSignature = "";
+          contentCache.clear();
+        });
+      document.querySelector("#subtitleInput")
+        ?.addEventListener("input", () => {
+          layoutSignature = "";
+          contentCache.clear();
+        });
+      document.querySelector("#danmakuTextInput")
+        ?.addEventListener("input", () => {
+          layoutSignature = "";
+          contentCache.clear();
+        });
+
+      layoutSignature = "";
+      updateResponsiveChartMargins();
+      if (raceData.length > 0) {
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+    });
+  });
+})();
 
 </script>
 </body>

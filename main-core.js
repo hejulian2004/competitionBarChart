@@ -770,7 +770,7 @@
         0
       ];
 
-      const maximumTextWidth =
+      let maximumTextWidth =
         d3.max(
           candidates,
           value => measureLogicalText(
@@ -778,18 +778,35 @@
             22,
             800
           )
-        ) || 40;
+        ) || 45;
+
+      if (raceData && raceData.length > 0) {
+        categories.forEach(cat => {
+          raceData.forEach(frame => {
+            const v = Number(frame?.values?.[cat]);
+            if (Number.isFinite(v)) {
+              const formatted = formatValue(v);
+              const w = measureLogicalText(formatted, 22, 800);
+              if (w > maximumTextWidth) maximumTextWidth = w;
+            }
+          });
+        });
+      }
+
+      const iconSize = typeof getSvgValueIconSize === "function"
+        ? getSvgValueIconSize()
+        : VALUE_ICON_SIZE;
 
       return Math.max(
-        60,
+        115,
         Math.min(
-          240,
+          280,
           Math.ceil(
             maximumTextWidth +
-            VALUE_ICON_SIZE +
+            iconSize +
             VALUE_ICON_TEXT_GAP +
             VALUE_BAR_GAP +
-            16
+            24
           )
         )
       );
@@ -1986,6 +2003,24 @@
         .attr("width", WIDTH)
         .attr("height", HEIGHT);
 
+      const captureArea = document.querySelector("#captureArea");
+      if (captureArea) {
+        captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
+        if (document.fullscreenElement === captureArea) {
+          captureArea.style.width = "100%";
+          captureArea.style.height = "100%";
+          captureArea.style.maxWidth = "100%";
+          captureArea.style.maxHeight = "100%";
+          captureArea.style.margin = "0";
+        } else {
+          const ratio = WIDTH / HEIGHT;
+          captureArea.style.maxWidth = "100%";
+          captureArea.style.maxHeight = "min(74vh, 700px)";
+          captureArea.style.width = `min(100%, calc(min(74vh, 700px) * ${ratio}))`;
+          captureArea.style.margin = "0 auto";
+        }
+      }
+
       if (raceData && raceData.length > 0) {
         updateResponsiveChartMargins();
         renderFrame(raceData[currentFrameIndex], false);
@@ -2040,7 +2075,7 @@
       );
 
       const valueGutter = getValueLabelGutter();
-      margin.right = Math.max(65, Math.min(260, valueGutter + 16));
+      margin.right = Math.max(115, Math.min(280, valueGutter + 12));
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
@@ -4161,7 +4196,9 @@
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
 
-      const cardHeight = logicalHeight - margin.top - margin.bottom + 60;
+      const yTargetRange = getYScaleTargetRange(ranking.length);
+      const targetHeight = yTargetRange[1] - yTargetRange[0];
+      const cardHeight = Math.min(logicalHeight - margin.top - margin.bottom + 60, targetHeight + 78);
 
       // 独立图表画布面板
       context.save();

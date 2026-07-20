@@ -502,6 +502,9 @@
     #captureArea {
       position: relative;
       width: 100%;
+      max-width: 100%;
+      max-height: min(74vh, 700px);
+      margin: 0 auto;
       aspect-ratio: 16 / 9;
       background:
         radial-gradient(circle at 90% 8%, rgba(59, 130, 246, 0.12), transparent 28%),
@@ -513,6 +516,7 @@
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.9),
         0 10px 30px rgba(30, 41, 59, 0.08);
+      transition: width 200ms ease, height 200ms ease, max-height 200ms ease;
     }
 
     #captureArea::after {

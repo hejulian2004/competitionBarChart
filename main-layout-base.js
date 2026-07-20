@@ -163,6 +163,20 @@
     captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
     captureArea.style.height = "auto";
     captureArea.style.minHeight = "0";
+
+    if (document.fullscreenElement === captureArea) {
+      captureArea.style.width = "100%";
+      captureArea.style.height = "100%";
+      captureArea.style.maxWidth = "100%";
+      captureArea.style.maxHeight = "100%";
+      captureArea.style.margin = "0";
+    } else {
+      const ratio = WIDTH / HEIGHT;
+      captureArea.style.maxWidth = "100%";
+      captureArea.style.maxHeight = "min(74vh, 700px)";
+      captureArea.style.width = `min(100%, calc(min(74vh, 700px) * ${ratio}))`;
+      captureArea.style.margin = "0 auto";
+    }
   }
 
   function clearDanmakuCache() {
@@ -237,12 +251,12 @@
       WIDTH - sideInset * 2
     );
     const isPortrait = WIDTH < HEIGHT;
-    const cardWidth = isPortrait
-      ? availableWidth
+    const cardWidth = (isPortrait || !title)
+      ? Math.max(Math.round(DANMAKU_BASE_MIN_WIDTH * uiScale), Math.min(WIDTH - sideInset * 2, Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale)))
       : Math.min(Math.round(DANMAKU_BASE_MAX_WIDTH * uiScale), availableWidth);
-    const startX = isPortrait || !title
-      ? sideInset
-      : WIDTH - sideInset - cardWidth;
+    const startX = (isPortrait || !title)
+      ? Math.max(sideInset, Math.round((WIDTH - cardWidth) / 2))
+      : Math.max(sideInset, WIDTH - sideInset - cardWidth);
     const cardY = headerBottom + Math.round(14 * uiScale);
     const chartGap = Math.round(DANMAKU_BASE_CHART_GAP * uiScale);
 
@@ -269,7 +283,11 @@
 
   function getPlotPanelBounds() {
     const top = margin.top - 42;
-    const bottom = HEIGHT - margin.bottom + 18;
+    const yTargetRange = getYScaleTargetRange(categories.length);
+    const targetHeight = yTargetRange[1] - yTargetRange[0];
+    const fullHeight = HEIGHT - margin.top - margin.bottom + 60;
+    const cardHeight = Math.min(fullHeight, targetHeight + 78);
+    const bottom = top + cardHeight;
     return {
       left: CHART_SIDE_PADDING,
       right: WIDTH - CHART_SIDE_PADDING,
@@ -316,12 +334,12 @@
   }
 
   function applyChartGeometry() {
-    const panelHeight = HEIGHT - margin.top - margin.bottom + 60;
+    const panel = getPlotPanelBounds();
     plotSurface
-      .attr("x", CHART_SIDE_PADDING)
-      .attr("y", margin.top - 42)
-      .attr("width", WIDTH - CHART_SIDE_PADDING * 2)
-      .attr("height", panelHeight);
+      .attr("x", panel.left)
+      .attr("y", panel.top)
+      .attr("width", panel.width)
+      .attr("height", panel.height);
 
     applyDateLayout();
     valueLabelClipRect
@@ -598,24 +616,36 @@
       };
     }
 
-    const normalized = (
-      clamp(Number(linearProgress) || 0, 0, 1) - DANMAKU_FADE_START
-    ) / (DANMAKU_FADE_END - DANMAKU_FADE_START);
-    const blend = smoothstep(normalized);
+    const progress = clamp(Number(linearProgress) || 0, 0, 1);
 
-    return {
-      shellAlpha: fromEntry && toEntry
-        ? 1
-        : fromEntry
-          ? 1 - blend
-          : toEntry
-            ? blend
-            : 0,
-      layers: [
-        fromEntry ? { entry: fromEntry, alpha: 1 - blend } : null,
-        toEntry ? { entry: toEntry, alpha: blend } : null
-      ].filter(Boolean)
-    };
+    if (fromEntry && toEntry) {
+      const blend = smoothstep((progress - 0.35) / 0.30);
+      return {
+        shellAlpha: 1,
+        layers: [
+          { entry: fromEntry, alpha: 1 - blend },
+          { entry: toEntry, alpha: blend }
+        ]
+      };
+    }
+
+    if (fromEntry) {
+      const alpha = progress < 0.45 ? 1 : smoothstep(1 - (progress - 0.45) / 0.15);
+      return {
+        shellAlpha: alpha,
+        layers: [{ entry: fromEntry, alpha }]
+      };
+    }
+
+    if (toEntry) {
+      const alpha = progress < 0.40 ? 0 : smoothstep((progress - 0.40) / 0.15);
+      return {
+        shellAlpha: alpha,
+        layers: [{ entry: toEntry, alpha }]
+      };
+    }
+
+    return { shellAlpha: 0, layers: [] };
   }
 
   function drawStableDanmaku(
@@ -695,12 +725,6 @@
     const enabled = checkbox ? checkbox.checked : true;
     const hiddenFrom = { ...(fromFrame || {}), time: "" };
     const hiddenTo = { ...(toFrame || fromFrame || {}), time: "" };
-    const savedRangeFunction = getYScaleTargetRange;
-
-    getYScaleTargetRange = function exportFullHeightRange() {
-      return [margin.top, HEIGHT - margin.bottom];
-    };
-
     if (checkbox && enabled) checkbox.checked = false;
     try {
       originalDrawDirectCanvasVideoFrame(
@@ -713,7 +737,6 @@
         linearProgress
       );
     } finally {
-      getYScaleTargetRange = savedRangeFunction || originalGetYScaleTargetRange;
       if (checkbox && enabled) checkbox.checked = true;
     }
 
@@ -760,6 +783,9 @@
   if (document.fonts?.ready) {
     document.fonts.ready.then(clearDanmakuCache).catch(() => {});
   }
+
+  window.addEventListener("resize", syncCaptureAspectRatio);
+  document.addEventListener("fullscreenchange", syncCaptureAspectRatio);
 
   syncVideoResolutionOptions();
   applyExactAspectGeometry(false);

@@ -498,19 +498,29 @@
           return;
         }
 
-        const blend = smoothstep(
-          ((clamp(Number(linearProgress) || 0, 0, 1) - FADE_START) /
-            (FADE_END - FADE_START))
-        );
-        const placement = fromEntry || toEntry;
-        const shellAlpha = fromEntry && toEntry
-          ? 1
-          : fromEntry
-            ? 1 - blend
-            : blend;
-        drawDanmaku(context, outputWidth, outputHeight, placement, shellAlpha, true);
-        drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1 - blend, false);
-        drawDanmaku(context, outputWidth, outputHeight, toEntry, blend, false);
+        const progress = clamp(Number(linearProgress) || 0, 0, 1);
+
+        if (fromEntry && toEntry) {
+          const blend = smoothstep((progress - 0.35) / 0.30);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1, true);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, 1 - blend, false);
+          drawDanmaku(context, outputWidth, outputHeight, toEntry, blend, false);
+          return;
+        }
+
+        if (fromEntry) {
+          const alpha = progress < 0.45 ? 1 : smoothstep(1 - (progress - 0.45) / 0.15);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, alpha, true);
+          drawDanmaku(context, outputWidth, outputHeight, fromEntry, alpha, false);
+          return;
+        }
+
+        if (toEntry) {
+          const alpha = progress < 0.40 ? 0 : smoothstep((progress - 0.40) / 0.15);
+          drawDanmaku(context, outputWidth, outputHeight, toEntry, alpha, true);
+          drawDanmaku(context, outputWidth, outputHeight, toEntry, alpha, false);
+          return;
+        }
       }
 
       function drawDate(context, outputWidth, outputHeight, text) {
