@@ -995,6 +995,7 @@ const WIDTH = 1280;
         raceData[currentFrameIndex],
         false
       );
+      saveAppState();
     }
 
     function getIconInitial(name) {
@@ -1188,6 +1189,7 @@ const WIDTH = 1280;
         raceData[currentFrameIndex],
         false
       );
+      saveAppState();
 
       setStatus(
         `已移除 ${name} 的自定义图标。`
@@ -1334,6 +1336,7 @@ const WIDTH = 1280;
                 raceData[currentFrameIndex],
                 false
               );
+              saveAppState();
 
               setStatus(
                 `已更新 ${name} 的圆形图标。`
@@ -1492,6 +1495,7 @@ const WIDTH = 1280;
       refreshColorScale();
       renderColorControls();
       renderFrame(raceData[currentFrameIndex], false);
+      saveAppState();
       setStatus("已恢复全部主体的自动配色。");
     }
 
@@ -1596,6 +1600,11 @@ const WIDTH = 1280;
       return document.querySelector(
         "#showZeroInput"
       ).checked;
+    }
+
+    function isGradientEnabled() {
+      const el = document.querySelector("#enableGradientInput");
+      return el ? el.checked : true;
     }
 
     function isEffectivelyZero(value) {
@@ -2416,7 +2425,7 @@ const WIDTH = 1280;
         .attr("height", yScale.bandwidth())
         .attr("width", 0)
         .attr("rx", 11)
-        .attr("fill", d => `url(#${getGradientId(d.name)})`)
+        .attr("fill", d => isGradientEnabled() ? `url(#${getGradientId(d.name)})` : getBarColor(d.name))
         .attr("filter", "url(#barShadow)")
         .attr("stroke", "rgba(255,255,255,0.50)")
         .attr("stroke-width", 1)
@@ -2433,7 +2442,7 @@ const WIDTH = 1280;
           "width",
           d => Math.abs(xScale(d.value) - xScale(0))
         )
-        .attr("fill", d => `url(#${getGradientId(d.name)})`);
+        .attr("fill", d => isGradientEnabled() ? `url(#${getGradientId(d.name)})` : getBarColor(d.name));
 
       bars.exit()
         .transition(transition)
@@ -2902,6 +2911,86 @@ const WIDTH = 1280;
       container.replaceChildren(table);
     }
 
+    const STORAGE_KEY = "bar_chart_race_saved_state";
+
+    function saveAppState() {
+      try {
+        const inputIds = [
+          "titleInput", "subtitleInput", "barsInput", "showZeroInput",
+          "enableGradientInput", "xAxisModeInput", "valueScaleInput",
+          "speedInput", "gifFpsInput", "gifCompatibilityInput",
+          "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+          "valueStepInput", "unitInput"
+        ];
+
+        const inputsState = {};
+        inputIds.forEach(id => {
+          const el = document.querySelector(`#${id}`);
+          if (el) {
+            inputsState[id] = el.type === "checkbox" ? el.checked : el.value;
+          }
+        });
+
+        const state = {
+          rows: rows,
+          inputs: inputsState,
+          customColors: Array.from(customColors.entries()),
+          customIcons: Array.from(customIcons.entries()),
+          savedAt: Date.now()
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn("无法保存状态到 LocalStorage:", err);
+      }
+    }
+
+    function loadAppState() {
+      try {
+        const json = localStorage.getItem(STORAGE_KEY);
+        if (!json) return false;
+        const state = JSON.parse(json);
+        if (!state || !Array.isArray(state.rows) || state.rows.length < 2) return false;
+
+        customColors.clear();
+        if (Array.isArray(state.customColors)) {
+          state.customColors.forEach(([name, val]) => customColors.set(name, val));
+        }
+
+        customIcons.clear();
+        if (Array.isArray(state.customIcons)) {
+          state.customIcons.forEach(([name, val]) => customIcons.set(name, val));
+        }
+
+        if (state.inputs) {
+          Object.entries(state.inputs).forEach(([id, val]) => {
+            const el = document.querySelector(`#${id}`);
+            if (el) {
+              if (el.type === "checkbox") {
+                el.checked = Boolean(val);
+              } else {
+                el.value = val;
+              }
+            }
+          });
+        }
+
+        rows = normalizeRows(state.rows);
+        convertRowsToRaceData(rows);
+        currentFrameIndex = 0;
+        updatePreviewTable();
+        refreshColorScale();
+        renderColorControls();
+        syncProgress(0);
+        renderFrame(raceData[0], false);
+        setStatus("已成功为您自动恢复上次编辑的数据和配置！");
+        return true;
+      } catch (err) {
+        console.warn("恢复本地状态失败:", err);
+        return false;
+      }
+    }
+
     function applyRows(rawRows, sourceName) {
       stopPlayback();
       rows = normalizeRows(rawRows);
@@ -2911,6 +3000,7 @@ const WIDTH = 1280;
       renderColorControls();
       syncProgress(0);
       renderFrame(raceData[0], false);
+      saveAppState();
       setStatus(`已加载 ${sourceName}：${raceData.length} 个时间点，${categories.length} 个对象。`);
     }
 
@@ -3946,10 +4036,14 @@ const WIDTH = 1280;
         context.shadowBlur = 9;
         context.shadowOffsetY = 3;
         
-        const gradient = context.createLinearGradient(barX, y, barX + barWidth, y);
-        gradient.addColorStop(0, gradStart);
-        gradient.addColorStop(1, gradEnd);
-        context.fillStyle = gradient;
+        if (isGradientEnabled()) {
+          const gradient = context.createLinearGradient(barX, y, barX + barWidth, y);
+          gradient.addColorStop(0, gradStart);
+          gradient.addColorStop(1, gradEnd);
+          context.fillStyle = gradient;
+        } else {
+          context.fillStyle = barColor;
+        }
         
         fillRoundedRect(
           context,
@@ -5606,22 +5700,37 @@ const WIDTH = 1280;
     document.querySelector("#exitFullscreenButton")
       .addEventListener("click", () => document.exitFullscreen?.());
 
-    ["titleInput", "subtitleInput", "barsInput", "unitInput", "valueStepInput"].forEach(id => {
-      document.querySelector(`#${id}`).addEventListener("input", () => {
-        renderFrame(raceData[currentFrameIndex], false);
-      });
+    const autoSaveInputIds = [
+      "titleInput", "subtitleInput", "barsInput", "showZeroInput",
+      "enableGradientInput", "xAxisModeInput", "valueScaleInput",
+      "speedInput", "gifFpsInput", "gifCompatibilityInput",
+      "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+      "valueStepInput", "unitInput"
+    ];
+
+    autoSaveInputIds.forEach(id => {
+      const el = document.querySelector(`#${id}`);
+      if (el) {
+        const handler = () => {
+          if (raceData && raceData.length > 0) {
+            renderFrame(raceData[currentFrameIndex], false);
+          }
+          saveAppState();
+        };
+        el.addEventListener("input", handler);
+        el.addEventListener("change", handler);
+      }
     });
 
-    document.querySelector("#showZeroInput")
-      .addEventListener("change", event => {
-        renderFrame(raceData[currentFrameIndex], false);
-
-        setStatus(
-          event.target.checked
-            ? "已显示数值为 0 的主体。"
-            : "已隐藏数值为 0 的主体。"
-        );
-      });
+    window.addEventListener("beforeunload", event => {
+      saveAppState();
+      if (isPlaying) {
+        event.preventDefault();
+        event.returnValue = "正在播放动画，确定要离开吗？";
+      }
+    });
 
     updateSpeedLabel();
-    applyRows(structuredClone(sampleRows), "示例数据");
+    if (!loadAppState()) {
+      applyRows(structuredClone(sampleRows), "示例数据");
+    }

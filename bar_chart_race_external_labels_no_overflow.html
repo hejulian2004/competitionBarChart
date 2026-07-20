@@ -12,7 +12,7 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
   <style>
-    :root {
+:root {
       font-family: Inter, "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
       color: #172033;
       background: #edf3fa;
@@ -761,7 +761,8 @@
         flex: 1 1 calc(50% - 8px);
       }
     }
-  </style>
+
+</style>
 </head>
 
 <body>
@@ -793,6 +794,14 @@
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
             <input id="showZeroInput" type="checkbox" checked />
             显示数值为 0 的主体
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="enableGradientInput">柱体颜色效果</label>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
+            <input id="enableGradientInput" type="checkbox" checked />
+            启用柱体渐变色
           </label>
         </div>
 
@@ -1008,7 +1017,7 @@
   </div>
 
   <script>
-    const WIDTH = 1280;
+const WIDTH = 1280;
     const HEIGHT = 720;
     const BASE_FRAME_DURATION = 1500;
 
@@ -2005,6 +2014,7 @@
         raceData[currentFrameIndex],
         false
       );
+      saveAppState();
     }
 
     function getIconInitial(name) {
@@ -2198,6 +2208,7 @@
         raceData[currentFrameIndex],
         false
       );
+      saveAppState();
 
       setStatus(
         `已移除 ${name} 的自定义图标。`
@@ -2344,6 +2355,7 @@
                 raceData[currentFrameIndex],
                 false
               );
+              saveAppState();
 
               setStatus(
                 `已更新 ${name} 的圆形图标。`
@@ -2502,6 +2514,7 @@
       refreshColorScale();
       renderColorControls();
       renderFrame(raceData[currentFrameIndex], false);
+      saveAppState();
       setStatus("已恢复全部主体的自动配色。");
     }
 
@@ -2606,6 +2619,11 @@
       return document.querySelector(
         "#showZeroInput"
       ).checked;
+    }
+
+    function isGradientEnabled() {
+      const el = document.querySelector("#enableGradientInput");
+      return el ? el.checked : true;
     }
 
     function isEffectivelyZero(value) {
@@ -3426,7 +3444,7 @@
         .attr("height", yScale.bandwidth())
         .attr("width", 0)
         .attr("rx", 11)
-        .attr("fill", d => `url(#${getGradientId(d.name)})`)
+        .attr("fill", d => isGradientEnabled() ? `url(#${getGradientId(d.name)})` : getBarColor(d.name))
         .attr("filter", "url(#barShadow)")
         .attr("stroke", "rgba(255,255,255,0.50)")
         .attr("stroke-width", 1)
@@ -3443,7 +3461,7 @@
           "width",
           d => Math.abs(xScale(d.value) - xScale(0))
         )
-        .attr("fill", d => `url(#${getGradientId(d.name)})`);
+        .attr("fill", d => isGradientEnabled() ? `url(#${getGradientId(d.name)})` : getBarColor(d.name));
 
       bars.exit()
         .transition(transition)
@@ -3912,6 +3930,86 @@
       container.replaceChildren(table);
     }
 
+    const STORAGE_KEY = "bar_chart_race_saved_state";
+
+    function saveAppState() {
+      try {
+        const inputIds = [
+          "titleInput", "subtitleInput", "barsInput", "showZeroInput",
+          "enableGradientInput", "xAxisModeInput", "valueScaleInput",
+          "speedInput", "gifFpsInput", "gifCompatibilityInput",
+          "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+          "valueStepInput", "unitInput"
+        ];
+
+        const inputsState = {};
+        inputIds.forEach(id => {
+          const el = document.querySelector(`#${id}`);
+          if (el) {
+            inputsState[id] = el.type === "checkbox" ? el.checked : el.value;
+          }
+        });
+
+        const state = {
+          rows: rows,
+          inputs: inputsState,
+          customColors: Array.from(customColors.entries()),
+          customIcons: Array.from(customIcons.entries()),
+          savedAt: Date.now()
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn("无法保存状态到 LocalStorage:", err);
+      }
+    }
+
+    function loadAppState() {
+      try {
+        const json = localStorage.getItem(STORAGE_KEY);
+        if (!json) return false;
+        const state = JSON.parse(json);
+        if (!state || !Array.isArray(state.rows) || state.rows.length < 2) return false;
+
+        customColors.clear();
+        if (Array.isArray(state.customColors)) {
+          state.customColors.forEach(([name, val]) => customColors.set(name, val));
+        }
+
+        customIcons.clear();
+        if (Array.isArray(state.customIcons)) {
+          state.customIcons.forEach(([name, val]) => customIcons.set(name, val));
+        }
+
+        if (state.inputs) {
+          Object.entries(state.inputs).forEach(([id, val]) => {
+            const el = document.querySelector(`#${id}`);
+            if (el) {
+              if (el.type === "checkbox") {
+                el.checked = Boolean(val);
+              } else {
+                el.value = val;
+              }
+            }
+          });
+        }
+
+        rows = normalizeRows(state.rows);
+        convertRowsToRaceData(rows);
+        currentFrameIndex = 0;
+        updatePreviewTable();
+        refreshColorScale();
+        renderColorControls();
+        syncProgress(0);
+        renderFrame(raceData[0], false);
+        setStatus("已成功为您自动恢复上次编辑的数据和配置！");
+        return true;
+      } catch (err) {
+        console.warn("恢复本地状态失败:", err);
+        return false;
+      }
+    }
+
     function applyRows(rawRows, sourceName) {
       stopPlayback();
       rows = normalizeRows(rawRows);
@@ -3921,6 +4019,7 @@
       renderColorControls();
       syncProgress(0);
       renderFrame(raceData[0], false);
+      saveAppState();
       setStatus(`已加载 ${sourceName}：${raceData.length} 个时间点，${categories.length} 个对象。`);
     }
 
@@ -4956,10 +5055,14 @@
         context.shadowBlur = 9;
         context.shadowOffsetY = 3;
         
-        const gradient = context.createLinearGradient(barX, y, barX + barWidth, y);
-        gradient.addColorStop(0, gradStart);
-        gradient.addColorStop(1, gradEnd);
-        context.fillStyle = gradient;
+        if (isGradientEnabled()) {
+          const gradient = context.createLinearGradient(barX, y, barX + barWidth, y);
+          gradient.addColorStop(0, gradStart);
+          gradient.addColorStop(1, gradEnd);
+          context.fillStyle = gradient;
+        } else {
+          context.fillStyle = barColor;
+        }
         
         fillRoundedRect(
           context,
@@ -6616,25 +6719,41 @@
     document.querySelector("#exitFullscreenButton")
       .addEventListener("click", () => document.exitFullscreen?.());
 
-    ["titleInput", "subtitleInput", "barsInput", "unitInput", "valueStepInput"].forEach(id => {
-      document.querySelector(`#${id}`).addEventListener("input", () => {
-        renderFrame(raceData[currentFrameIndex], false);
-      });
+    const autoSaveInputIds = [
+      "titleInput", "subtitleInput", "barsInput", "showZeroInput",
+      "enableGradientInput", "xAxisModeInput", "valueScaleInput",
+      "speedInput", "gifFpsInput", "gifCompatibilityInput",
+      "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+      "valueStepInput", "unitInput"
+    ];
+
+    autoSaveInputIds.forEach(id => {
+      const el = document.querySelector(`#${id}`);
+      if (el) {
+        const handler = () => {
+          if (raceData && raceData.length > 0) {
+            renderFrame(raceData[currentFrameIndex], false);
+          }
+          saveAppState();
+        };
+        el.addEventListener("input", handler);
+        el.addEventListener("change", handler);
+      }
     });
 
-    document.querySelector("#showZeroInput")
-      .addEventListener("change", event => {
-        renderFrame(raceData[currentFrameIndex], false);
-
-        setStatus(
-          event.target.checked
-            ? "已显示数值为 0 的主体。"
-            : "已隐藏数值为 0 的主体。"
-        );
-      });
+    window.addEventListener("beforeunload", event => {
+      saveAppState();
+      if (isPlaying) {
+        event.preventDefault();
+        event.returnValue = "正在播放动画，确定要离开吗？";
+      }
+    });
 
     updateSpeedLabel();
-    applyRows(structuredClone(sampleRows), "示例数据");
-  </script>
+    if (!loadAppState()) {
+      applyRows(structuredClone(sampleRows), "示例数据");
+    }
+
+</script>
 </body>
 </html>
