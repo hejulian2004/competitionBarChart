@@ -3091,13 +3091,13 @@ const WIDTH = 1280;
        * 名称较长时自动扩大，但设置上限避免绘图区过窄。
        */
       margin.left = Math.max(
-        175,
+        88,
         Math.min(
-          320,
+          280,
           Math.ceil(
             longestNameWidth +
             NAME_BAR_GAP +
-            CHART_SIDE_PADDING
+            CHART_SIDE_PADDING + 6
           )
         )
       );
