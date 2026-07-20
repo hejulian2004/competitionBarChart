@@ -4298,14 +4298,14 @@
 
         if (hasTitle) {
           const subtitleText = document.querySelector("#subtitleInput").value.trim();
-          const isPortrait = WIDTH < 850;
-          const cardWidth = isPortrait
-            ? Math.min(520, WIDTH - TITLE_LEFT - CHART_SIDE_PADDING - 10)
-            : 640;
-          const cardX = isPortrait
-            ? Math.max(TITLE_LEFT, WIDTH - cardWidth - CHART_SIDE_PADDING - 10)
-            : 580;
-          const cardY = isPortrait && subtitleText ? 86 : 32;
+          const maxAvailableCardWidth = Math.min(640, WIDTH - CHART_SIDE_PADDING * 2 - 20);
+          const cardWidth = Math.max(280, maxAvailableCardWidth);
+
+          const needsWrapY = WIDTH < 960 && subtitleText;
+          const cardX = needsWrapY
+            ? TITLE_LEFT
+            : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - cardWidth - 10);
+          const cardY = needsWrapY ? 86 : 32;
           const cardHeight = 64;
 
           danmakuGroup.append("rect")
@@ -4335,13 +4335,18 @@
             .attr("fill", "#2563eb")
             .text(`📌 ${frame.time}`);
 
-          danmakuGroup.append("text")
+          const textEl = danmakuGroup.append("text")
             .attr("x", cardX + 26)
             .attr("y", cardY + 47)
             .attr("font-size", 15)
             .attr("font-weight", 800)
             .attr("fill", "#0f172a")
             .text(text);
+
+          const textWidth = measureLogicalText(text, 15, 800);
+          if (textWidth > cardWidth - 36) {
+            textEl.attr("textLength", cardWidth - 36).attr("lengthAdjust", "spacingAndGlyphs");
+          }
         } else {
           const startX = TITLE_LEFT;
           const startY = 34;
@@ -4899,7 +4904,7 @@
       );
 
       return {
-        time: toFrame.time,
+        time: linearRatio < 0.5 ? fromFrame.time : toFrame.time,
         values,
         labelValues,
         axisState: interpolateAxisState(
@@ -5705,14 +5710,14 @@
 
         if (hasTitle) {
           const subtitleText = document.querySelector("#subtitleInput").value.trim();
-          const isPortrait = WIDTH < 850;
-          const cardWidth = isPortrait
-            ? Math.min(520, WIDTH - TITLE_LEFT - CHART_SIDE_PADDING - 10)
-            : 640;
-          const cardX = isPortrait
-            ? Math.max(TITLE_LEFT, WIDTH - cardWidth - CHART_SIDE_PADDING - 10)
-            : 580;
-          const cardY = isPortrait && subtitleText ? 86 : 32;
+          const maxAvailableCardWidth = Math.min(640, WIDTH - CHART_SIDE_PADDING * 2 - 20);
+          const cardWidth = Math.max(280, maxAvailableCardWidth);
+
+          const needsWrapY = WIDTH < 960 && subtitleText;
+          const cardX = needsWrapY
+            ? TITLE_LEFT
+            : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - cardWidth - 10);
+          const cardY = needsWrapY ? 86 : 32;
           const cardHeight = 64;
 
           context.save();
@@ -5737,7 +5742,7 @@
 
           context.fillStyle = "#0f172a";
           context.font = '800 15px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          context.fillText(text, cardX + 26, cardY + 47);
+          context.fillText(text, cardX + 26, cardY + 47, cardWidth - 36);
           context.restore();
         } else {
           const startX = TITLE_LEFT;
