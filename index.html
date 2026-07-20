@@ -47,6 +47,16 @@
         </div>
 
         <div class="field">
+          <label for="aspectRatioModeInput">画幅方向与比例 (PPT / 横竖屏)</label>
+          <select id="aspectRatioModeInput">
+            <option value="16:9" selected>横屏 16:9 (标准演示 1280×720)</option>
+            <option value="3:4">竖屏 PPT 双栏 3:4 (推荐 PPT 左/右分栏 810×1080)</option>
+            <option value="9:16">竖屏 9:16 (手机/全竖屏 720×1280)</option>
+            <option value="4:5">竖屏 4:5 (精致纵向 864×1080)</option>
+          </select>
+        </div>
+
+        <div class="field">
           <label for="chartWidthScaleInput">图表宽度缩放 (<span id="chartWidthScaleValue">100% (1280px)</span>)</label>
           <input id="chartWidthScaleInput" type="range" min="70" max="160" value="100" step="5" />
         </div>

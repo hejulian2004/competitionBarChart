@@ -1,6 +1,6 @@
     let baseWidth = 1280;
     let WIDTH = 1280;
-    const HEIGHT = 720;
+    let HEIGHT = 720;
     const BASE_FRAME_DURATION = 1500;
 
     const MOTION_RATIO = 0.82;
@@ -1947,16 +1947,35 @@
     }
 
     function updateChartWidth() {
+      const mode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
       const scale = getChartWidthScale();
+
+      let targetBaseW = 1280;
+      let targetBaseH = 720;
+
+      if (mode === "3:4") {
+        targetBaseW = 810;
+        targetBaseH = 1080;
+      } else if (mode === "9:16") {
+        targetBaseW = 720;
+        targetBaseH = 1280;
+      } else if (mode === "4:5") {
+        targetBaseW = 864;
+        targetBaseH = 1080;
+      }
+
+      HEIGHT = targetBaseH;
+      baseWidth = targetBaseW;
       WIDTH = Math.round(baseWidth * (scale / 100));
 
       const label = document.querySelector("#chartWidthScaleValue");
       if (label) {
-        label.textContent = `${scale}% (${WIDTH}px)`;
+        label.textContent = `${scale}% (${WIDTH}×${HEIGHT}px)`;
       }
 
       svg.attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
-        .attr("width", WIDTH);
+        .attr("width", WIDTH)
+        .attr("height", HEIGHT);
 
       if (raceData && raceData.length > 0) {
         updateResponsiveChartMargins();
@@ -3135,9 +3154,15 @@
         const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
 
         if (hasTitle) {
-          const cardX = 580;
-          const cardY = 32;
-          const cardWidth = 640;
+          const subtitleText = document.querySelector("#subtitleInput").value.trim();
+          const isPortrait = WIDTH < 850;
+          const cardWidth = isPortrait
+            ? Math.min(520, WIDTH - TITLE_LEFT - CHART_SIDE_PADDING - 10)
+            : 640;
+          const cardX = isPortrait
+            ? Math.max(TITLE_LEFT, WIDTH - cardWidth - CHART_SIDE_PADDING - 10)
+            : 580;
+          const cardY = isPortrait && subtitleText ? 86 : 32;
           const cardHeight = 64;
 
           danmakuGroup.append("rect")
@@ -4536,9 +4561,15 @@
         const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
 
         if (hasTitle) {
-          const cardX = 580;
-          const cardY = 32;
-          const cardWidth = 640;
+          const subtitleText = document.querySelector("#subtitleInput").value.trim();
+          const isPortrait = WIDTH < 850;
+          const cardWidth = isPortrait
+            ? Math.min(520, WIDTH - TITLE_LEFT - CHART_SIDE_PADDING - 10)
+            : 640;
+          const cardX = isPortrait
+            ? Math.max(TITLE_LEFT, WIDTH - cardWidth - CHART_SIDE_PADDING - 10)
+            : 580;
+          const cardY = isPortrait && subtitleText ? 86 : 32;
           const cardHeight = 64;
 
           context.save();
@@ -6104,10 +6135,13 @@
     document.querySelector("#chartWidthScaleInput")
       ?.addEventListener("input", updateChartWidth);
 
+    document.querySelector("#aspectRatioModeInput")
+      ?.addEventListener("change", updateChartWidth);
+
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
-      "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
+      "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput",
       "valueStepInput", "unitInput"
     ];
