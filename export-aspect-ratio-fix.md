@@ -1,1 +1,0 @@
-This temporary marker documents the export aspect-ratio fix commit.
