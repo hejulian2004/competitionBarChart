@@ -155,9 +155,9 @@
 
     .color-item {
       display: grid;
-      grid-template-columns: 36px 42px minmax(0, 1fr) 92px;
+      grid-template-columns: 36px 42px minmax(0, 1fr) 80px 32px;
       align-items: center;
-      gap: 9px;
+      gap: 7px;
       min-height: 44px;
       padding: 7px 9px;
       border: 1px solid #e2e8f0;
@@ -165,6 +165,28 @@
       background: rgba(255, 255, 255, 0.92);
       box-shadow: 0 1px 3px rgba(15, 23, 42, 0.035);
       transition: transform 150ms ease, box-shadow 150ms ease;
+    }
+
+    .entity-delete-btn {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid #fee2e2;
+      border-radius: 7px;
+      background: #fef2f2;
+      color: #ef4444;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: none;
+      transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+    }
+
+    .entity-delete-btn:hover {
+      background: #fee2e2;
+      border-color: #fca5a5;
+      transform: scale(1.05);
     }
 
     .color-item:hover {

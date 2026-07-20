@@ -1564,17 +1564,80 @@ const WIDTH = 1280;
           }
         );
 
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "entity-delete-btn";
+        deleteBtn.innerHTML = "🗑️";
+        deleteBtn.title = `移除主体对象：${name}`;
+        deleteBtn.addEventListener("click", event => {
+          event.preventDefault();
+          event.stopPropagation();
+          removeEntity(name);
+        });
+
         item.append(
           picker,
           iconWrap,
           nameLabel,
-          codeInput
+          codeInput,
+          deleteBtn
         );
 
         fragment.appendChild(item);
       });
 
       container.replaceChildren(fragment);
+    }
+
+    function removeEntity(name) {
+      if (!name || rows.length < 2) return;
+
+      const headers = rows[0];
+      const colIndex = headers.indexOf(name);
+      if (colIndex <= 0) return;
+
+      if (headers.length <= 2) {
+        setStatus("至少需要保留 1 个主体对象！", true);
+        return;
+      }
+
+      const updatedRows = rows.map(row => row.filter((_, idx) => idx !== colIndex));
+
+      customColors.delete(name);
+      customIcons.delete(name);
+      iconImageCache.delete(name);
+
+      applyRows(updatedRows, `移除“${name}”`);
+      setStatus(`已成功从图表中移除主体“${name}”。`);
+    }
+
+    function clearAllData() {
+      if (!confirm("确定要清空当前所有导入的数据、自定义配置和本地缓存吗？")) {
+        return;
+      }
+
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.warn("无法清空本地缓存:", e);
+      }
+
+      customColors.clear();
+      customIcons.clear();
+      iconImageCache.clear();
+      danmakuMap.clear();
+
+      const fileInput = document.querySelector("#fileInput");
+      if (fileInput) fileInput.value = "";
+
+      const emptyRows = [
+        ["时间", "主体A", "主体B"],
+        ["2026", 0, 0]
+      ];
+
+      applyRows(emptyRows, "空白数据框");
+      renderDanmakuList();
+      setStatus("已成功清空所有数据与本地缓存！您可以重新导入新的表格或选择恢复示例。");
     }
 
     function resetCustomColors() {
@@ -2479,6 +2542,8 @@ const WIDTH = 1280;
         .attr("y2", HEIGHT - margin.bottom)
         .style("opacity", zeroLineOpacity);
 
+      const bottomY = HEIGHT - margin.bottom + 20;
+
       const rowTracks = chartGroup
         .selectAll("rect.row-track")
         .data(ranking, d => d.name);
@@ -2488,7 +2553,7 @@ const WIDTH = 1280;
         .attr("class", "row-track")
         .attr("x", margin.left)
         .attr("width", WIDTH - margin.left - margin.right)
-        .attr("y", d => yScale(d.name))
+        .attr("y", bottomY)
         .attr("height", yScale.bandwidth())
         .attr("rx", 10)
         .style("opacity", 0)
@@ -2505,6 +2570,7 @@ const WIDTH = 1280;
 
       rowTracks.exit()
         .transition(transition)
+        .attr("y", bottomY)
         .style("opacity", 0)
         .remove();
 
@@ -2515,10 +2581,11 @@ const WIDTH = 1280;
         .append("rect")
         .attr("class", "bar")
         .attr("x", xScale(0))
-        .attr("y", d => yScale(d.name))
+        .attr("y", bottomY)
         .attr("height", yScale.bandwidth())
         .attr("width", 0)
         .attr("rx", 11)
+        .style("opacity", 0)
         .attr("fill", d => isGradientEnabled() ? `url(#${getGradientId(d.name)})` : getBarColor(d.name))
         .attr("filter", "url(#barShadow)")
         .attr("stroke", "rgba(255,255,255,0.50)")
@@ -2536,10 +2603,12 @@ const WIDTH = 1280;
           "width",
           d => Math.abs(xScale(d.value) - xScale(0))
         )
+        .style("opacity", 1)
         .attr("fill", d => isGradientEnabled() ? `url(#${getGradientId(d.name)})` : getBarColor(d.name));
 
       bars.exit()
         .transition(transition)
+        .attr("y", bottomY)
         .attr("x", xScale(0))
         .attr("width", 0)
         .style("opacity", 0)
@@ -2552,16 +2621,22 @@ const WIDTH = 1280;
         .append("text")
         .attr("class", "bar-label")
         .attr("x", margin.left - NAME_BAR_GAP)
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
+        .attr("y", bottomY)
+        .style("opacity", 0)
         .attr("text-anchor", "end")
         .attr("dominant-baseline", "middle")
         .text(d => d.name)
         .merge(names)
         .transition(transition)
         .attr("x", margin.left - NAME_BAR_GAP)
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2);
+        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
+        .style("opacity", 1);
 
-      names.exit().transition(transition).style("opacity", 0).remove();
+      names.exit()
+        .transition(transition)
+        .attr("y", bottomY)
+        .style("opacity", 0)
+        .remove();
 
       const values = chartGroup.selectAll("text.value-label")
         .data(ranking, d => d.name);
@@ -2578,7 +2653,8 @@ const WIDTH = 1280;
             `#${d.rank}`
           ).valueLabelX
         )
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
+        .attr("y", bottomY)
+        .style("opacity", 0)
         .attr("dominant-baseline", "middle")
         .attr(
           "text-anchor",
@@ -2639,7 +2715,6 @@ const WIDTH = 1280;
         })
         .merge(values);
 
-      // 标签位置跟随柱体的缓动动画。
       mergedValues
         .transition(transition)
         .attr(
@@ -2675,30 +2750,12 @@ const WIDTH = 1280;
           ).valueFontSize
         )
         .attr(
-          "lengthAdjust",
-          "spacingAndGlyphs"
-        )
-        .attr(
-          "textLength",
-          d => {
-            const layout =
-              getSvgExternalLabelLayout(
-                frame,
-                d
-              );
-
-            return layout.valueTextCompressed
-              ? layout.valueTextMaxWidth
-              : null;
-          }
-        )
-        .attr(
           "clip-path",
           "url(#valueLabelClip)"
         )
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2);
+        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
+        .style("opacity", 1);
 
-      // 标签数值单独使用线性插值。
       mergedValues
         .transition(numberTransition)
         .tween("text", function(d) {
@@ -2727,6 +2784,7 @@ const WIDTH = 1280;
 
       values.exit()
         .transition(transition)
+        .attr("y", bottomY)
         .style("opacity", 0)
         .remove();
 
@@ -2738,6 +2796,7 @@ const WIDTH = 1280;
         .enter()
         .append("g")
         .attr("class", "value-icon")
+        .attr("transform", `translate(${margin.left}, ${bottomY})`)
         .style("opacity", 0);
 
       valueIconEnter
@@ -2872,14 +2931,6 @@ const WIDTH = 1280;
         .attr(
           "transform",
           d => {
-            const valueText = formatValue(
-              getFrameLabelValue(
-                frame,
-                d.name,
-                d.value
-              )
-            );
-
             const layout =
               getSvgExternalLabelLayout(
                 frame,
@@ -2901,6 +2952,7 @@ const WIDTH = 1280;
 
       valueIcons.exit()
         .transition(transition)
+        .attr("transform", `translate(${margin.left}, ${bottomY})`)
         .style("opacity", 0)
         .remove();
 
@@ -2919,7 +2971,8 @@ const WIDTH = 1280;
             `#${d.rank}`
           ).rankLabelX
         )
-        .attr("y", d => yScale(d.name) + yScale.bandwidth() / 2)
+        .attr("y", bottomY)
+        .style("opacity", 0)
         .attr("dominant-baseline", "middle")
         .attr(
           "text-anchor",
@@ -5699,6 +5752,9 @@ const WIDTH = 1280;
 
     document.querySelector("#loadSampleButton")
       .addEventListener("click", () => applyRows(structuredClone(sampleRows), "示例数据"));
+
+    document.querySelector("#clearDataButton")
+      ?.addEventListener("click", clearAllData);
 
     document.querySelector("#downloadTemplateButton")
       .addEventListener("click", downloadTemplateCsv);
