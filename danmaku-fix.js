@@ -2,14 +2,19 @@
   "use strict";
 
   const DANMAKU_CARD_HEIGHT = 58;
-  const DANMAKU_CARD_GAP = 26;
   const DANMAKU_CARD_RADIUS = 12;
-  const DANMAKU_HORIZONTAL_PADDING = 16;
-  const DANMAKU_MIN_WIDTH = 180;
-  const DANMAKU_MAX_WIDTH = 620;
+  const DANMAKU_CARD_MAX_WIDTH = 620;
+  const DANMAKU_CARD_MIN_WIDTH = 180;
+  const DANMAKU_CARD_HORIZONTAL_PADDING = 16;
+  const DANMAKU_SECTION_SIDE_INSET = 10;
+  const DANMAKU_SECTION_HORIZONTAL_PADDING = 16;
+  const DANMAKU_SECTION_VERTICAL_PADDING = 14;
+  const DANMAKU_SECTION_GAP = 24;
+  const DANMAKU_SECTION_RADIUS = 16;
   const CHART_BOTTOM_MARGIN = 36;
   const DATE_RIGHT_PADDING = 24;
-  const DATE_BOTTOM_PADDING = 12;
+  const DATE_BOTTOM_PADDING = 18;
+  const EXPORT_SWITCH_PROGRESS = Math.min(0.96, Math.max(0.5, MOTION_RATIO));
 
   const originalUpdateResponsiveChartMargins = updateResponsiveChartMargins;
   const originalRenderFrame = renderFrame;
@@ -25,51 +30,137 @@
     return [WIDTH, HEIGHT, enabled, title, subtitle, categories.length].join("|");
   }
 
-  function getDanmakuLayout(key = "", text = "") {
+  function syncCaptureAspectRatio() {
+    const captureArea = document.querySelector("#captureArea");
+    if (captureArea) {
+      captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
+    }
+  }
+
+  function getDanmakuLayout(key = "") {
     const title = Boolean(document.querySelector("#titleInput")?.value.trim());
     const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
     const headerBottom = subtitle ? 98 : title ? 72 : 18;
-    const cardY = headerBottom + 12;
-    const chartTop = cardY + DANMAKU_CARD_HEIGHT + DANMAKU_CARD_GAP + 42;
-    const isPortrait = WIDTH < 960;
-    const startX = (isPortrait || !title)
-      ? TITLE_LEFT
-      : Math.max(TITLE_LEFT, WIDTH - CHART_SIDE_PADDING - DANMAKU_MAX_WIDTH);
-    const availableWidth = Math.max(DANMAKU_MIN_WIDTH, WIDTH - startX - CHART_SIDE_PADDING);
-    const labelText = `节点 · ${key}`;
-    const requiredWidth = Math.max(
-      measureLogicalText(labelText, 13, 700),
-      measureLogicalText(text, 18, 800)
-    ) + DANMAKU_HORIZONTAL_PADDING * 2;
-    const cardWidth = Math.max(
-      DANMAKU_MIN_WIDTH,
-      Math.min(DANMAKU_MAX_WIDTH, availableWidth, requiredWidth)
+    const sectionX = CHART_SIDE_PADDING + DANMAKU_SECTION_SIDE_INSET;
+    const sectionY = headerBottom + 12;
+    const sectionWidth = Math.max(
+      DANMAKU_CARD_MIN_WIDTH + DANMAKU_SECTION_HORIZONTAL_PADDING * 2,
+      WIDTH - sectionX * 2
     );
+    const sectionHeight =
+      DANMAKU_CARD_HEIGHT + DANMAKU_SECTION_VERTICAL_PADDING * 2;
+    const innerLeft = sectionX + DANMAKU_SECTION_HORIZONTAL_PADDING;
+    const innerRight = sectionX + sectionWidth - DANMAKU_SECTION_HORIZONTAL_PADDING;
+    const availableWidth = Math.max(
+      DANMAKU_CARD_MIN_WIDTH,
+      innerRight - innerLeft
+    );
+    const isPortrait = WIDTH < 960;
+
+    // 卡片尺寸只依赖当前画幅，不依赖弹幕文字长度。
+    // 导出期间切换内容时不会发生左右伸缩或位置跳动。
+    const cardWidth = isPortrait
+      ? availableWidth
+      : Math.min(DANMAKU_CARD_MAX_WIDTH, availableWidth);
+    const startX = isPortrait || !title
+      ? innerLeft
+      : innerRight - cardWidth;
+    const cardY = sectionY + DANMAKU_SECTION_VERTICAL_PADDING;
+    const chartTop =
+      sectionY + sectionHeight + DANMAKU_SECTION_GAP + 42;
+    const labelText = `节点 · ${key}`;
 
     return {
+      sectionX,
+      sectionY,
+      sectionWidth,
+      sectionHeight,
       startX,
       cardY,
       cardWidth,
       chartTop,
       labelText,
-      labelX: startX + DANMAKU_HORIZONTAL_PADDING,
+      labelX: startX + DANMAKU_CARD_HORIZONTAL_PADDING,
       labelY: cardY + 19,
-      textX: startX + DANMAKU_HORIZONTAL_PADDING,
+      textX: startX + DANMAKU_CARD_HORIZONTAL_PADDING,
       textY: cardY + 43,
-      textMaxWidth: Math.max(60, cardWidth - DANMAKU_HORIZONTAL_PADDING * 2)
+      textMaxWidth: Math.max(
+        60,
+        cardWidth - DANMAKU_CARD_HORIZONTAL_PADDING * 2
+      )
     };
   }
 
-  function getDatePosition() {
+  function getPlotPanelBounds() {
+    const top = margin.top - 42;
+    const bottom = HEIGHT - margin.bottom + 18;
     return {
-      x: WIDTH - CHART_SIDE_PADDING - DATE_RIGHT_PADDING,
-      y: HEIGHT - CHART_BOTTOM_MARGIN - DATE_BOTTOM_PADDING
+      left: CHART_SIDE_PADDING,
+      right: WIDTH - CHART_SIDE_PADDING,
+      top,
+      bottom,
+      width: WIDTH - CHART_SIDE_PADDING * 2,
+      height: Math.max(1, bottom - top)
     };
+  }
+
+  function getDateLayout(text = "") {
+    const panel = getPlotPanelBounds();
+    const isPortrait = WIDTH < HEIGHT;
+    const baseFontSize = Math.min(
+      104,
+      WIDTH * 0.115,
+      HEIGHT * 0.145
+    );
+    const maxTextWidth = Math.max(
+      140,
+      panel.width * (isPortrait ? 0.58 : 0.42)
+    );
+    const measuredWidth = measureLogicalText(
+      String(text),
+      baseFontSize,
+      900
+    );
+    const widthScale = measuredWidth > 0
+      ? Math.min(1, maxTextWidth / measuredWidth)
+      : 1;
+    const fontSize = Math.max(
+      36,
+      Math.floor(baseFontSize * widthScale)
+    );
+
+    return {
+      x: panel.right - DATE_RIGHT_PADDING,
+      y: panel.bottom - DATE_BOTTOM_PADDING,
+      fontSize,
+      maxTextWidth
+    };
+  }
+
+  function applyDateLayout(text = timeLabel.text()) {
+    const layout = getDateLayout(text);
+    timeLabel
+      .attr("x", layout.x)
+      .attr("y", layout.y)
+      .attr("text-anchor", "end")
+      .style("font-size", `${layout.fontSize}px`)
+      .attr("textLength", null)
+      .attr("lengthAdjust", null);
+
+    const measuredWidth = measureLogicalText(
+      String(text),
+      layout.fontSize,
+      900
+    );
+    if (measuredWidth > layout.maxTextWidth) {
+      timeLabel
+        .attr("textLength", layout.maxTextWidth)
+        .attr("lengthAdjust", "spacingAndGlyphs");
+    }
   }
 
   function applyChartGeometry() {
     const cardHeight = HEIGHT - margin.top - margin.bottom + 60;
-    const datePosition = getDatePosition();
 
     plotSurface
       .attr("x", CHART_SIDE_PADDING)
@@ -77,10 +168,7 @@
       .attr("width", WIDTH - CHART_SIDE_PADDING * 2)
       .attr("height", cardHeight);
 
-    timeLabel
-      .attr("x", datePosition.x)
-      .attr("y", datePosition.y)
-      .attr("text-anchor", "end");
+    applyDateLayout();
 
     valueLabelClipRect
       .attr("x", CHART_SIDE_PADDING)
@@ -88,6 +176,7 @@
 
     xScale.range([margin.left, WIDTH - margin.right]);
     yScale.range(getYScaleTargetRange(categories.length));
+    syncCaptureAspectRatio();
   }
 
   updateResponsiveChartMargins = function patchedUpdateResponsiveChartMargins() {
@@ -111,7 +200,9 @@
   function getDanmakuEntry(frame) {
     if (!frame || !isDanmakuEnabled()) return null;
     const key = getDanmakuKey(frame.time);
-    return danmakuMap.has(key) ? { key, text: danmakuMap.get(key) } : null;
+    return danmakuMap.has(key)
+      ? { key, text: danmakuMap.get(key) }
+      : null;
   }
 
   function renderSvgDanmaku(frame) {
@@ -122,31 +213,56 @@
       return;
     }
 
-    const layout = getDanmakuLayout(entry.key, entry.text);
+    const layout = getDanmakuLayout(entry.key);
     danmakuGroup.style("display", null);
 
+    // 独立内层区域，让弹幕不再贴在外层画布边框或柱形图面板边线上。
     danmakuGroup.append("rect")
-      .attr("x", layout.startX).attr("y", layout.cardY)
-      .attr("width", layout.cardWidth).attr("height", DANMAKU_CARD_HEIGHT)
-      .attr("rx", DANMAKU_CARD_RADIUS).attr("fill", "#eff6ff")
-      .attr("stroke", "#bfdbfe").attr("stroke-width", 1);
+      .attr("x", layout.sectionX)
+      .attr("y", layout.sectionY)
+      .attr("width", layout.sectionWidth)
+      .attr("height", layout.sectionHeight)
+      .attr("rx", DANMAKU_SECTION_RADIUS)
+      .attr("fill", "rgba(255,255,255,0.78)")
+      .attr("stroke", "#dbe5f0")
+      .attr("stroke-width", 1);
+
+    danmakuGroup.append("rect")
+      .attr("x", layout.startX)
+      .attr("y", layout.cardY)
+      .attr("width", layout.cardWidth)
+      .attr("height", DANMAKU_CARD_HEIGHT)
+      .attr("rx", DANMAKU_CARD_RADIUS)
+      .attr("fill", "#eff6ff")
+      .attr("stroke", "#bfdbfe")
+      .attr("stroke-width", 1);
 
     danmakuGroup.append("circle")
-      .attr("cx", layout.labelX + 4).attr("cy", layout.labelY - 4)
-      .attr("r", 4).attr("fill", "#2563eb");
+      .attr("cx", layout.labelX + 4)
+      .attr("cy", layout.labelY - 4)
+      .attr("r", 4)
+      .attr("fill", "#2563eb");
 
     danmakuGroup.append("text")
-      .attr("x", layout.labelX + 14).attr("y", layout.labelY)
-      .attr("font-size", 13).attr("font-weight", 700)
-      .attr("fill", "#2563eb").text(layout.labelText);
+      .attr("x", layout.labelX + 14)
+      .attr("y", layout.labelY)
+      .attr("font-size", 13)
+      .attr("font-weight", 700)
+      .attr("fill", "#2563eb")
+      .text(layout.labelText);
 
     const textEl = danmakuGroup.append("text")
-      .attr("x", layout.textX).attr("y", layout.textY)
-      .attr("font-size", 18).attr("font-weight", 800)
-      .attr("fill", "#0f172a").text(entry.text);
+      .attr("x", layout.textX)
+      .attr("y", layout.textY)
+      .attr("font-size", 18)
+      .attr("font-weight", 800)
+      .attr("fill", "#0f172a")
+      .text(entry.text);
 
     if (measureLogicalText(entry.text, 18, 800) > layout.textMaxWidth) {
-      textEl.attr("textLength", layout.textMaxWidth).attr("lengthAdjust", "spacingAndGlyphs");
+      textEl
+        .attr("textLength", layout.textMaxWidth)
+        .attr("lengthAdjust", "spacingAndGlyphs");
     }
   }
 
@@ -160,16 +276,23 @@
     } finally {
       if (checkbox && enabled) checkbox.checked = true;
     }
-    const datePosition = getDatePosition();
-    timeLabel.attr("x", datePosition.x).attr("y", datePosition.y).attr("text-anchor", "end");
+
+    applyDateLayout(frame?.time || "");
     renderSvgDanmaku(frame);
   };
 
-  function getExportEntry(fromFrame, toFrame) {
+  function getExportActiveFrame(fromFrame, toFrame, linearProgress) {
+    if (!toFrame) return fromFrame;
+    return linearProgress >= EXPORT_SWITCH_PROGRESS
+      ? toFrame
+      : fromFrame;
+  }
+
+  function getExportEntry(fromFrame, toFrame, linearProgress) {
     if (!isDanmakuEnabled()) return null;
-    const activeFrame = toFrame || fromFrame;
-    const key = getDanmakuKey(activeFrame?.time);
-    return key && danmakuMap.has(key) ? { key, text: danmakuMap.get(key) } : null;
+    return getDanmakuEntry(
+      getExportActiveFrame(fromFrame, toFrame, linearProgress)
+    );
   }
 
   function fillCanvasRoundedRect(context, x, y, width, height, radius) {
@@ -179,7 +302,12 @@
     context.lineTo(x + width - r, y);
     context.quadraticCurveTo(x + width, y, x + width, y + r);
     context.lineTo(x + width, y + height - r);
-    context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+    context.quadraticCurveTo(
+      x + width,
+      y + height,
+      x + width - r,
+      y + height
+    );
     context.lineTo(x + r, y + height);
     context.quadraticCurveTo(x, y + height, x, y + height - r);
     context.lineTo(x, y + r);
@@ -190,60 +318,138 @@
 
   function withLogicalCanvas(context, outputWidth, outputHeight, draw) {
     context.save();
-    context.setTransform(outputWidth / WIDTH, 0, 0, outputHeight / HEIGHT, 0, 0);
+    context.setTransform(
+      outputWidth / WIDTH,
+      0,
+      0,
+      outputHeight / HEIGHT,
+      0,
+      0
+    );
     draw();
     context.restore();
     context.setTransform(1, 0, 0, 1, 0, 0);
   }
 
   function drawCanvasDanmaku(context, outputWidth, outputHeight, entry) {
-    const layout = getDanmakuLayout(entry.key, entry.text);
+    const layout = getDanmakuLayout(entry.key);
     withLogicalCanvas(context, outputWidth, outputHeight, () => {
       context.textBaseline = "alphabetic";
-      context.fillStyle = "#eff6ff";
-      fillCanvasRoundedRect(context, layout.startX, layout.cardY, layout.cardWidth, DANMAKU_CARD_HEIGHT, DANMAKU_CARD_RADIUS);
-      context.strokeStyle = "#bfdbfe";
+
+      context.fillStyle = "rgba(255,255,255,0.78)";
+      fillCanvasRoundedRect(
+        context,
+        layout.sectionX,
+        layout.sectionY,
+        layout.sectionWidth,
+        layout.sectionHeight,
+        DANMAKU_SECTION_RADIUS
+      );
+      context.strokeStyle = "#dbe5f0";
       context.lineWidth = 1;
-      drawRoundedStroke(context, layout.startX, layout.cardY, layout.cardWidth, DANMAKU_CARD_HEIGHT, DANMAKU_CARD_RADIUS);
+      drawRoundedStroke(
+        context,
+        layout.sectionX,
+        layout.sectionY,
+        layout.sectionWidth,
+        layout.sectionHeight,
+        DANMAKU_SECTION_RADIUS
+      );
+
+      context.fillStyle = "#eff6ff";
+      fillCanvasRoundedRect(
+        context,
+        layout.startX,
+        layout.cardY,
+        layout.cardWidth,
+        DANMAKU_CARD_HEIGHT,
+        DANMAKU_CARD_RADIUS
+      );
+      context.strokeStyle = "#bfdbfe";
+      drawRoundedStroke(
+        context,
+        layout.startX,
+        layout.cardY,
+        layout.cardWidth,
+        DANMAKU_CARD_HEIGHT,
+        DANMAKU_CARD_RADIUS
+      );
+
       context.fillStyle = "#2563eb";
       context.beginPath();
-      context.arc(layout.labelX + 4, layout.labelY - 4, 4, 0, Math.PI * 2);
+      context.arc(
+        layout.labelX + 4,
+        layout.labelY - 4,
+        4,
+        0,
+        Math.PI * 2
+      );
       context.fill();
-      context.font = '700 13px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+
+      context.font =
+        '700 13px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
       context.textAlign = "left";
-      context.fillText(layout.labelText, layout.labelX + 14, layout.labelY);
+      context.fillText(
+        layout.labelText,
+        layout.labelX + 14,
+        layout.labelY
+      );
+
       context.fillStyle = "#0f172a";
-      context.font = '800 18px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
-      context.fillText(entry.text, layout.textX, layout.textY, layout.textMaxWidth);
+      context.font =
+        '800 18px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+      context.fillText(
+        entry.text,
+        layout.textX,
+        layout.textY,
+        layout.textMaxWidth
+      );
     });
   }
 
   function drawCanvasDate(context, outputWidth, outputHeight, text) {
     if (!text) return;
-    const position = getDatePosition();
+    const layout = getDateLayout(text);
     withLogicalCanvas(context, outputWidth, outputHeight, () => {
       context.globalAlpha = 0.20;
       context.fillStyle = "#2563eb";
-      context.font = '900 104px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+      context.font =
+        `900 ${layout.fontSize}px ` +
+        '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
       context.textAlign = "right";
       context.textBaseline = "alphabetic";
-      context.fillText(String(text), position.x, position.y);
+      context.fillText(
+        String(text),
+        layout.x,
+        layout.y,
+        layout.maxTextWidth
+      );
       context.globalAlpha = 1;
     });
   }
 
   drawDirectCanvasVideoFrame = function patchedDrawDirectCanvasVideoFrame(
-    context, outputWidth, outputHeight, fromFrame, toFrame, easedProgress, linearProgress
+    context,
+    outputWidth,
+    outputHeight,
+    fromFrame,
+    toFrame,
+    easedProgress,
+    linearProgress
   ) {
     ensureLayout();
     const checkbox = document.querySelector("#showDanmakuInput");
     const enabled = checkbox ? checkbox.checked : true;
-    const activeFrame = toFrame || fromFrame;
+    const activeFrame = getExportActiveFrame(
+      fromFrame,
+      toFrame,
+      linearProgress
+    );
     const hiddenFrom = { ...fromFrame, time: "" };
     const hiddenTo = { ...(toFrame || fromFrame), time: "" };
     const savedRangeFunction = getYScaleTargetRange;
 
-    // 导出时让柱形区域完整延伸到面板底部，消除固定柱高造成的大块底部留白。
+    // 导出时使用整个柱形图面板高度，减少底部无效留白。
     getYScaleTargetRange = function exportYScaleRange() {
       return [margin.top, HEIGHT - margin.bottom];
     };
@@ -251,21 +457,56 @@
     if (checkbox && enabled) checkbox.checked = false;
     try {
       originalDrawDirectCanvasVideoFrame(
-        context, outputWidth, outputHeight,
-        hiddenFrom, hiddenTo, easedProgress, linearProgress
+        context,
+        outputWidth,
+        outputHeight,
+        hiddenFrom,
+        hiddenTo,
+        easedProgress,
+        linearProgress
       );
     } finally {
-      getYScaleTargetRange = savedRangeFunction || originalGetYScaleTargetRange;
+      getYScaleTargetRange =
+        savedRangeFunction || originalGetYScaleTargetRange;
       if (checkbox && enabled) checkbox.checked = true;
     }
 
-    drawCanvasDate(context, outputWidth, outputHeight, activeFrame?.time);
+    drawCanvasDate(
+      context,
+      outputWidth,
+      outputHeight,
+      activeFrame?.time
+    );
     if (enabled) {
-      const entry = getExportEntry(fromFrame, toFrame);
-      if (entry) drawCanvasDanmaku(context, outputWidth, outputHeight, entry);
+      const entry = getExportEntry(
+        fromFrame,
+        toFrame,
+        linearProgress
+      );
+      if (entry) {
+        drawCanvasDanmaku(
+          context,
+          outputWidth,
+          outputHeight,
+          entry
+        );
+      }
     }
   };
 
+  document.querySelector("#aspectRatioModeInput")
+    ?.addEventListener(
+      "change",
+      () => requestAnimationFrame(syncCaptureAspectRatio)
+    );
+  document.querySelector("#chartWidthScaleInput")
+    ?.addEventListener(
+      "input",
+      () => requestAnimationFrame(syncCaptureAspectRatio)
+    );
+
   updateResponsiveChartMargins();
-  if (raceData.length > 0) renderFrame(raceData[currentFrameIndex], false);
+  if (raceData.length > 0) {
+    renderFrame(raceData[currentFrameIndex], false);
+  }
 })();
