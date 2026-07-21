@@ -2158,31 +2158,31 @@
       const hasTitle = Boolean(document.querySelector("#titleInput")?.value.trim());
       const hasSubtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
 
-      let maxDanmakuHeight = 0;
+      let maxDanmakuLines = 0;
       if (isDanmakuEnabled() && danmakuMap.size > 0) {
         danmakuMap.forEach(text => {
-          const layout = getDanmakuCardLayout(text);
-          if (layout && layout.cardHeight > maxDanmakuHeight) {
-            maxDanmakuHeight = layout.cardHeight;
-          }
+          const l = String(text).split("\n").map(s => s.trim()).filter(Boolean).length;
+          if (l > maxDanmakuLines) maxDanmakuLines = l;
         });
       }
 
+      const neededCardHeight = maxDanmakuLines > 0 ? Math.max(104, 38 + maxDanmakuLines * 34 + 14) : 0;
+
       if (!hasTitle && !hasSubtitle) {
-        if (maxDanmakuHeight > 0) {
-          margin.top = 14 + maxDanmakuHeight + 14 + 42;
+        if (neededCardHeight > 0) {
+          margin.top = 14 + neededCardHeight + 12 + 42;
         } else {
           margin.top = 58;
         }
       } else if (hasTitle && !hasSubtitle) {
-        if (maxDanmakuHeight > 0) {
-          margin.top = 64 + maxDanmakuHeight + 14 + 42;
+        if (neededCardHeight > 0) {
+          margin.top = 64 + neededCardHeight + 12 + 42;
         } else {
           margin.top = 118;
         }
       } else {
-        if (maxDanmakuHeight > 0) {
-          margin.top = 96 + maxDanmakuHeight + 14 + 42;
+        if (neededCardHeight > 0) {
+          margin.top = 96 + neededCardHeight + 12 + 42;
         } else {
           margin.top = 154;
         }
@@ -2847,39 +2847,8 @@
         .duration(duration)
         .ease(d3.easeLinear);
         
-      if (!animate) {
-        timeLabel.interrupt().text(frame.time);
-        renderDanmakuDOM(danmakuGroup, frame.time, danmakuMap.get(getDanmakuKey(frame.time)));
-      } else {
-        const oldTime = dataFrameIndex > 0 ? raceData[dataFrameIndex - 1].time : frame.time;
-        const targetTime = frame.time;
-
-        timeLabel
-          .transition(numberTransition)
-          .tween("text", function() {
-            return t => {
-              // 动画完全结束前，保持旧时间节点，从而保证每个时间节点都有平等的展示时间（包括第一个节点）
-              this.textContent = t >= 1 ? targetTime : oldTime;
-            };
-          });
-
-        let currentRenderedTime = null;
-        danmakuGroup
-          .transition(numberTransition)
-          .tween("danmaku", function() {
-            return function(t) {
-              const activeTime = t >= 1 ? targetTime : oldTime;
-              if (currentRenderedTime !== activeTime) {
-                currentRenderedTime = activeTime;
-                renderDanmakuDOM(
-                  danmakuGroup,
-                  activeTime,
-                  danmakuMap.get(getDanmakuKey(activeTime))
-                );
-              }
-            };
-          });
-      }
+      timeLabel.interrupt().text(frame.time);
+      renderDanmakuDOM(danmakuGroup, frame.time, danmakuMap.get(getDanmakuKey(frame.time)));
 
       const axisLayout = getAxisTickLayout();
 
@@ -3358,8 +3327,11 @@
 
       const startX = CHART_SIDE_PADDING;
       const cardWidth = WIDTH - CHART_SIDE_PADDING * 2;
-      const lineGap = 22;
-      const cardHeight = 32 + lines.length * lineGap + 8;
+      const targetPlotY = margin.top - 42;
+      const cardHeight = Math.max(
+        32 + lines.length * 24 + 8,
+        targetPlotY - 12 - startY
+      );
 
       return {
         startX,
@@ -3390,31 +3362,39 @@
         .attr("y", layout.startY)
         .attr("width", layout.cardWidth)
         .attr("height", layout.cardHeight)
-        .attr("rx", 12)
-        .attr("ry", 12)
+        .attr("rx", 14)
+        .attr("ry", 14)
         .attr("fill", "#eff6ff")
         .attr("stroke", "#dbeafe")
         .attr("stroke-width", 1.5);
 
+      const headerY = layout.startY + 28;
       group.append("text")
-        .attr("x", layout.startX + 16)
-        .attr("y", layout.startY + 24)
-        .attr("font-size", 13)
+        .attr("x", layout.startX + 20)
+        .attr("y", headerY)
+        .attr("font-size", 16)
         .attr("font-weight", 700)
         .attr("fill", "#2563eb")
         .text(`● 节点 · ${getDanmakuKey(time)}`);
 
-      const maxW = layout.cardWidth - 32;
+      const maxW = layout.cardWidth - 40;
+      const lineCount = layout.lines.length;
+      const availableTextH = layout.cardHeight - 40;
+      const lineGap = lineCount > 1
+        ? Math.min(38, Math.floor((availableTextH - 10) / lineCount))
+        : 34;
+
       layout.lines.forEach((lineText, i) => {
+        const lineY = headerY + 8 + (i + 1) * lineGap;
         const textEl = group.append("text")
-          .attr("x", layout.startX + 16)
-          .attr("y", layout.startY + 24 + 22 * (i + 1))
-          .attr("font-size", 16)
+          .attr("x", layout.startX + 20)
+          .attr("y", lineY)
+          .attr("font-size", 24)
           .attr("font-weight", 800)
           .attr("fill", "#0f172a")
           .text(lineText);
 
-        const textWidth = measureLogicalText(lineText, 16, 800);
+        const textWidth = measureLogicalText(lineText, 24, 800);
         if (textWidth > maxW) {
           textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
         }
@@ -3583,16 +3563,21 @@
 
       if (currentFrameIndex >= raceData.length - 1) {
         currentFrameIndex = 0;
-        renderFrame(raceData[0], false);
-        await sleep(250);
+        renderFrame(raceData[0], 0, false);
       }
 
       isPlaying = true;
       const token = ++playToken;
 
+      if (currentFrameIndex === 0) {
+        renderFrame(raceData[0], 0, false);
+        await sleep(getFrameDuration());
+        if (!isPlaying || token !== playToken) return;
+      }
+
       while (isPlaying && token === playToken && currentFrameIndex < raceData.length - 1) {
         currentFrameIndex += 1;
-        renderFrame(raceData[currentFrameIndex], true);
+        renderFrame(raceData[currentFrameIndex], currentFrameIndex, true);
 
         await sleep(getFrameDuration());
       }
@@ -3603,8 +3588,7 @@
     async function restartPlayback() {
       stopPlayback();
       currentFrameIndex = 0;
-      renderFrame(raceData[0], false);
-      await sleep(300);
+      renderFrame(raceData[0], 0, false);
       startPlayback();
     }
 
@@ -4050,10 +4034,7 @@
         })
       );
 
-      let displayTime = fromFrame.time;
-      if (toFrame && linearRatio >= 1) {
-        displayTime = toFrame.time;
-      }
+      let displayTime = (toFrame && linearRatio > 0) ? toFrame.time : fromFrame.time;
 
       return {
         time: displayTime,
@@ -4885,18 +4866,25 @@
             12
           );
 
+          const headerY = layout.startY + 28;
           context.fillStyle = "#2563eb";
-          context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          context.font = '700 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
           context.textAlign = "left";
           context.textBaseline = "alphabetic";
-          context.fillText(`● 节点 · ${frameKey}`, layout.startX + 16, layout.startY + 24);
+          context.fillText(`● 节点 · ${frameKey}`, layout.startX + 20, headerY);
 
           context.fillStyle = "#0f172a";
-          context.font = '800 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          const maxTextW = layout.cardWidth - 32;
+          context.font = '800 24px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          const maxTextW = layout.cardWidth - 40;
+          const lineCount = layout.lines.length;
+          const availableTextH = layout.cardHeight - 40;
+          const lineGap = lineCount > 1
+            ? Math.min(38, Math.floor((availableTextH - 10) / lineCount))
+            : 34;
 
           layout.lines.forEach((lineText, i) => {
-            context.fillText(lineText, layout.startX + 16, layout.startY + 24 + 22 * (i + 1), maxTextW);
+            const lineY = headerY + 8 + (i + 1) * lineGap;
+            context.fillText(lineText, layout.startX + 20, lineY, maxTextW);
           });
 
           context.restore();
