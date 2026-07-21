@@ -4416,8 +4416,9 @@
       const startX = CHART_SIDE_PADDING;
       const cardWidth = WIDTH - CHART_SIDE_PADDING * 2;
       const targetPlotY = margin.top - 42;
+      const maxCardLines = 4;
       const cardHeight = Math.max(
-        32 + lines.length * 24 + 8,
+        32 + maxCardLines * 24 + 8,
         targetPlotY - 12 - startY
       );
 
@@ -4465,13 +4466,13 @@
       const lineCount = layout.lines.length;
       const availableTextH = layout.cardHeight - 40;
 
-      const fontSizeScale = { 1: 1.35, 2: 1.0, 3: 0.85, 4: 0.72 };
+      const fontSizeScale = { 1: 1.50, 2: 1.15, 3: 0.95, 4: 0.82 };
       const fs = fontSizeScale[lineCount] || 1.0;
       const fontSize = Math.max(14, Math.round(24 * fs));
 
       const lineGap = lineCount > 1
-        ? Math.min(Math.round(fontSize * 1.5), Math.floor((availableTextH - 10) / lineCount))
-        : Math.round(fontSize * 1.4);
+        ? Math.min(Math.round(fontSize * 1.6), Math.floor((availableTextH - 10) / lineCount))
+        : Math.round(fontSize * 1.5);
 
       const textBlockH = (lineCount - 1) * lineGap + fontSize;
       const baseY = layout.startY + Math.round((layout.cardHeight - textBlockH) / 2) + fontSize;
@@ -8547,25 +8548,32 @@
 
       function getDanmakuLayout(key = "", text = "") {
         const metrics = getBaseMetrics();
-        const lineCount = getReservedLineCount(metrics);
         const title = Boolean(document.querySelector("#titleInput")?.value.trim());
         const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
         const headerBottom = subtitle ? 104 : title ? 72 : 22;
         const cardWidth = WIDTH - CHART_SIDE_PADDING * 2;
 
+        // 按当前条目自己的文字行数计算字号缩放
+        const rawLines = text ? getDanmakuTextLines(text, metrics, MAX_LINES) : [];
+        const lineCount = Math.min(MAX_LINES, Math.max(1, rawLines.length || 1));
+
+        // 全局最大行数用于 chartTop，防止卡片压到图表区域
+        const maxLineCount = getReservedLineCount(metrics);
+        const maxCardHeight = metrics.padding * 2 + maxLineCount * metrics.lineHeight;
+
         let textFontSize = metrics.textFontSize;
         let lineHeight = metrics.lineHeight;
-        // 按行数缩放字号：行数越多字号越小，行数越少字号越大
-        const sizeScale = { 1: 1.30, 2: 1.0, 3: 0.84, 4: 0.72 };
-        const lineScale = { 1: 1.0, 2: 1.0, 3: 0.90, 4: 0.82 };
+        const sizeScale = { 1: 1.45, 2: 1.15, 3: 0.95, 4: 0.82 };
+        const lineScale = { 1: 1.10, 2: 1.08, 3: 0.98, 4: 0.90 };
         const ss = sizeScale[lineCount] || 1.0;
         const ls = lineScale[lineCount] || 1.0;
         textFontSize = Math.max(12, Math.round(textFontSize * ss));
         lineHeight = Math.max(14, Math.round(lineHeight * ls));
 
         const adjustedMetrics = { ...metrics, textFontSize, lineHeight };
-        const cardHeight = metrics.padding * 2 + lineCount * lineHeight;
+        const cardHeight = maxCardHeight;
         const cardY = headerBottom + Math.max(10, Math.round(12 * metrics.scale));
+        // 用调整后的字号重新换行
         const textLines = getDanmakuTextLines(
           text,
           adjustedMetrics,
@@ -8596,7 +8604,7 @@
           labelText: `节点 · ${key}`,
           chartTop:
             cardY +
-            cardHeight +
+            maxCardHeight +
             Math.max(16, Math.round(20 * metrics.scale)) +
             42
         };
