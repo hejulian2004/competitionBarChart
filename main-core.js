@@ -190,6 +190,14 @@
       return clamped / 100;
     }
 
+    function getDateColor() {
+      const codeEl = document.querySelector("#dateColorCodeInput");
+      const pickerEl = document.querySelector("#dateColorInput");
+      const raw = (codeEl ? codeEl.value : pickerEl ? pickerEl.value : "").trim();
+      const normalized = normalizeHexColorInput(raw);
+      return normalized || "#2563EB";
+    }
+
     function updateDateOpacity() {
       const opacity = getDateOpacity();
       const label = document.querySelector("#dateOpacityValue");
@@ -197,6 +205,25 @@
         label.textContent = `${Math.round(opacity * 100)}%`;
       }
       timeLabel.style("opacity", opacity);
+      if (raceData && raceData.length > 0) {
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+      saveAppState();
+    }
+
+    function updateDateColor(colorHex) {
+      const picker = document.querySelector("#dateColorInput");
+      const code = document.querySelector("#dateColorCodeInput");
+      const validHex = normalizeHexColorInput(colorHex) || "#2563EB";
+
+      if (picker && picker.value.toUpperCase() !== validHex.toUpperCase()) {
+        picker.value = validHex;
+      }
+      if (code && code.value.toUpperCase() !== validHex.toUpperCase()) {
+        code.value = validHex;
+      }
+
+      timeLabel.style("fill", validHex);
       if (raceData && raceData.length > 0) {
         renderFrame(raceData[currentFrameIndex], false);
       }
@@ -3205,21 +3232,21 @@
 
     function updatePreviewTable() {
       const container = document.querySelector("#previewTable");
-      const previewRows = rows.slice(0, 13);
+      if (!container || !rows || rows.length === 0) return;
 
       const table = document.createElement("table");
       const thead = document.createElement("thead");
       const tbody = document.createElement("tbody");
 
       const headerRow = document.createElement("tr");
-      previewRows[0].forEach(cell => {
+      rows[0].forEach(cell => {
         const th = document.createElement("th");
         th.textContent = cell;
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow);
 
-      previewRows.slice(1).forEach(row => {
+      rows.slice(1).forEach(row => {
         const tr = document.createElement("tr");
         row.forEach(cell => {
           const td = document.createElement("td");
@@ -4594,9 +4621,10 @@
       // 时间标签
       const dateOpacity = typeof getDateOpacity === "function" ? getDateOpacity() : 0.20;
       if (dateOpacity > 0.001) {
+        const dateColor = typeof getDateColor === "function" ? getDateColor() : "#2563eb";
         context.save();
         context.globalAlpha = dateOpacity;
-        context.fillStyle = "#2563eb";
+        context.fillStyle = dateColor;
         context.font =
           '900 104px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
         context.textAlign = "right";
@@ -6177,12 +6205,18 @@
     document.querySelector("#dateOpacityInput")
       ?.addEventListener("input", updateDateOpacity);
 
+    document.querySelector("#dateColorInput")
+      ?.addEventListener("input", e => updateDateColor(e.target.value));
+
+    document.querySelector("#dateColorCodeInput")
+      ?.addEventListener("input", e => updateDateColor(e.target.value));
+
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
-      "valueStepInput", "unitInput", "dateOpacityInput"
+      "valueStepInput", "unitInput", "dateOpacityInput", "dateColorInput", "dateColorCodeInput"
     ];
 
     autoSaveInputIds.forEach(id => {

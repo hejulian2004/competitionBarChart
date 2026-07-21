@@ -706,6 +706,7 @@
     const opacity = typeof getDateOpacity === "function" ? getDateOpacity() : 0.20;
     if (opacity <= 0.001) return;
 
+    const color = typeof getDateColor === "function" ? getDateColor() : "#2563eb";
     const logical = getDateLayout(text);
     const scaleX = outputWidth / WIDTH;
     const scaleY = outputHeight / HEIGHT;
@@ -714,7 +715,7 @@
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
     context.globalAlpha = opacity;
-    context.fillStyle = "#2563eb";
+    context.fillStyle = color;
     context.font =
       `900 ${Math.max(18, Math.round(logical.fontSize * fontScale))}px ` +
       '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
