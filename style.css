@@ -568,14 +568,14 @@
     .axis path { display: none; }
 
     .bar-label {
-      font-size: 23px;
+      font-size: 19px;
       font-weight: 760;
       letter-spacing: -0.012em;
       fill: #263449;
     }
 
     .value-label {
-      font-size: 26px;
+      font-size: 21px;
       font-weight: 850;
       font-variant-numeric: tabular-nums;
       paint-order: stroke;

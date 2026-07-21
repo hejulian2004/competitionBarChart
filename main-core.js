@@ -11,7 +11,7 @@
 
     const NAME_BAR_GAP = 12;
     const CHART_SIDE_PADDING = 16;
-    const VALUE_ICON_SIZE = 38;
+    const VALUE_ICON_SIZE = 32;
     const VALUE_ICON_TEXT_GAP = 9;
     const VALUE_BAR_GAP = 10;
     const MIN_VALUE_LABEL_GUTTER = 40;
@@ -681,21 +681,21 @@
       const symmetricTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.maximumAbsolute
+          extent.maximumAbsolute * 1.015
         )
       );
 
       const negativeTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.negativeMagnitude
+          extent.negativeMagnitude * 1.015
         )
       );
 
       const positiveTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.positiveMagnitude
+          extent.positiveMagnitude * 1.015
         )
       );
 
@@ -739,15 +739,15 @@
           symmetricMaximum:
             getValueExtents(
               fromFrame.values
-            ).maximumAbsolute,
+            ).maximumAbsolute * 1.015,
           negativeMagnitude:
             getValueExtents(
               fromFrame.values
-            ).negativeMagnitude,
+            ).negativeMagnitude * 1.015,
           positiveMagnitude:
             getValueExtents(
               fromFrame.values
-            ).positiveMagnitude
+            ).positiveMagnitude * 1.015
         };
 
       const toState =
@@ -755,15 +755,15 @@
           symmetricMaximum:
             getValueExtents(
               toFrame.values
-            ).maximumAbsolute,
+            ).maximumAbsolute * 1.015,
           negativeMagnitude:
             getValueExtents(
               toFrame.values
-            ).negativeMagnitude,
+            ).negativeMagnitude * 1.015,
           positiveMagnitude:
             getValueExtents(
               toFrame.values
-            ).positiveMagnitude
+            ).positiveMagnitude * 1.015
         };
 
       const currentExtent =
@@ -979,7 +979,7 @@
 
         const positiveMagnitude = frame?.axisState?.positiveMagnitude || Math.max(
           getDynamicAxisMinimumMagnitude(),
-          currentExtent.positiveMagnitude
+          currentExtent.positiveMagnitude * 1.015
         );
 
         return [0, positiveMagnitude];
@@ -2095,8 +2095,8 @@
         categories,
         name => measureLogicalText(
           name,
-          23,
-          760
+          20,
+          700
         )
       ) || 0;
 
@@ -2281,7 +2281,7 @@
       barColor,
       valueText,
       rankText,
-      valueFontSize = 26,
+      valueFontSize = 21,
       rankFontSize = 15,
       iconSize = getSvgValueIconSize()
     ) {
@@ -2514,7 +2514,7 @@
         getBarColor(datum.name),
         valueText,
         "",
-        26,
+        21,
         15,
         getSvgValueIconSize()
       );
@@ -3803,13 +3803,13 @@
           opacity: 0.88;
         }
         .bar-label {
-          font-size: 23px;
-          font-weight: 760;
+          font-size: 20px;
+          font-weight: 700;
           fill: #263244;
         }
         .value-label {
-          font-size: 26px;
-          font-weight: 850;
+          font-size: 21px;
+          font-weight: 800;
           fill: #263244;
         }
         .time-label {
@@ -4597,17 +4597,17 @@
       const maxBarCount = Math.max(fromRanking.length, toRanking.length);
       const nameFontSize =
         maxBarCount <= 10
-          ? 23
+          ? 20
           : maxBarCount <= 20
-            ? 18
-            : 14;
+            ? 16
+            : 12;
 
       const valueFontSize =
         maxBarCount <= 10
-          ? 26
+          ? 22
           : maxBarCount <= 20
-            ? 20
-            : 15;
+            ? 17
+            : 13;
 
       const rankFontSize =
         maxBarCount <= 10
