@@ -1837,50 +1837,9 @@
       };
     }
 
-    function smoothAxisTargetSeries(
-      targets,
-      shrinkAlpha = 0.20,
-      deadZoneRatio = 0.05
-    ) {
-      if (targets.length === 0) return [];
-
-      let current = targets[0];
-
-      return targets.map((rawTarget, index) => {
-        const target = Math.max(
-          getDynamicAxisMinimumMagnitude(),
-          rawTarget
-        );
-
-        if (index === 0) {
-          current = target;
-          return current;
-        }
-
-        /*
-         * 扩张时直接到达目标，防止柱体被裁剪；
-         * 收缩时缓慢跟随，并设置 5% 死区，防止范围来回抖动。
-         * 相邻时间点之间仍会由动画连续插值。
-         */
-        if (target > current) {
-          current = target;
-        } else {
-          const changeRatio =
-            (current - target) /
-            Math.max(
-              current,
-              getDynamicAxisMinimumMagnitude()
-            );
-
-          if (changeRatio > deadZoneRatio) {
-            current +=
-              (target - current) *
-              shrinkAlpha;
-          }
-        }
-
-        return current;
-      });
+    function smoothAxisTargetSeries(targets) {
+      const minimumMagnitude = getDynamicAxisMinimumMagnitude();
+      return targets.map(target => Math.max(minimumMagnitude, target));
     }
 
     function updateDynamicAxisTimeline() {
@@ -1894,44 +1853,32 @@
       const symmetricTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.maximumAbsolute * 1.12
+          extent.maximumAbsolute * 1.08
         )
       );
 
       const negativeTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.negativeMagnitude * 1.12
+          extent.negativeMagnitude * 1.08
         )
       );
 
       const positiveTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.positiveMagnitude * 1.12
+          extent.positiveMagnitude * 1.08
         )
       );
 
       const symmetricSeries =
-        smoothAxisTargetSeries(
-          symmetricTargets,
-          0.20,
-          0.05
-        );
+        smoothAxisTargetSeries(symmetricTargets);
 
       const negativeSeries =
-        smoothAxisTargetSeries(
-          negativeTargets,
-          0.20,
-          0.05
-        );
+        smoothAxisTargetSeries(negativeTargets);
 
       const positiveSeries =
-        smoothAxisTargetSeries(
-          positiveTargets,
-          0.20,
-          0.05
-        );
+        smoothAxisTargetSeries(positiveTargets);
 
       dynamicAxisTimeline = raceData.map(
         (frame, index) => ({
@@ -1964,15 +1911,15 @@
           symmetricMaximum:
             getValueExtents(
               fromFrame.values
-            ).maximumAbsolute * 1.12,
+            ).maximumAbsolute * 1.08,
           negativeMagnitude:
             getValueExtents(
               fromFrame.values
-            ).negativeMagnitude * 1.12,
+            ).negativeMagnitude * 1.08,
           positiveMagnitude:
             getValueExtents(
               fromFrame.values
-            ).positiveMagnitude * 1.12
+            ).positiveMagnitude * 1.08
         };
 
       const toState =
@@ -1980,15 +1927,15 @@
           symmetricMaximum:
             getValueExtents(
               toFrame.values
-            ).maximumAbsolute * 1.12,
+            ).maximumAbsolute * 1.08,
           negativeMagnitude:
             getValueExtents(
               toFrame.values
-            ).negativeMagnitude * 1.12,
+            ).negativeMagnitude * 1.08,
           positiveMagnitude:
             getValueExtents(
               toFrame.values
-            ).positiveMagnitude * 1.12
+            ).positiveMagnitude * 1.08
         };
 
       const currentExtent =
@@ -2202,10 +2149,9 @@
           )
         );
 
-        const positiveMagnitude = Math.max(
+        const positiveMagnitude = frame?.axisState?.positiveMagnitude || Math.max(
           getDynamicAxisMinimumMagnitude(),
-          currentExtent.positiveMagnitude * 1.08,
-          frame?.axisState?.positiveMagnitude || 0
+          currentExtent.positiveMagnitude * 1.08
         );
 
         return [0, positiveMagnitude];
