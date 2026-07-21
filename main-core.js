@@ -4520,10 +4520,9 @@
         context.globalAlpha = 1;
       }
 
-      const capacityCount = getMaxCapacityBarCount();
       const yBand = d3.scaleBand()
-        .domain(categories)
-        .range(getYScaleTargetRange(capacityCount))
+        .domain(ranking.map(d => d.name))
+        .range(getYScaleTargetRange(ranking.length))
         .padding(0.16);
 
       const fromRanks = getAllRankMap(fromFrame);
