@@ -3406,20 +3406,26 @@
       }
     }
 
-    function applyRows(rawRows, sourceName) {
+    function applyRows(rawRows, sourceName, targetFrameIndex = -1) {
       stopPlayback();
       rows = normalizeRows(rawRows);
       convertRowsToRaceData(rows);
-      currentFrameIndex = 0;
+      currentFrameIndex = targetFrameIndex >= 0 && targetFrameIndex < raceData.length
+        ? targetFrameIndex
+        : Math.max(0, raceData.length - 1);
       updatePreviewTable();
       renderColorControls();
       updateDanmakuTimeSelect();
       updateVideoCoverSelect();
       renderDanmakuList();
-      syncProgress(0);
-      renderFrame(raceData[0], false);
+      syncProgress(currentFrameIndex);
+      renderFrame(raceData[currentFrameIndex], false);
       saveAppState();
-      setStatus(`已加载 ${sourceName}：${raceData.length} 个时间点，${categories.length} 个对象。`);
+
+      const timeRangeStr = raceData.length > 0
+        ? `（${raceData[0].time} ~ ${raceData[raceData.length - 1].time}）`
+        : "";
+      setStatus(`已加载 ${sourceName}：共 ${raceData.length} 个时间节点${timeRangeStr}，${categories.length} 个主体对象。已自动跳转至最新节点【${raceData[currentFrameIndex]?.time}】！`);
     }
 
     function stopPlayback() {
@@ -3551,7 +3557,7 @@
 
           importedRows = XLSX.utils.sheet_to_json(
             workbook.Sheets[firstSheetName],
-            { header: 1, raw: true, defval: "" }
+            { header: 1, raw: false, defval: "" }
           );
         } else {
           throw new Error("仅支持 CSV、XLSX 和 XLS 文件。");
