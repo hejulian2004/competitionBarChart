@@ -2843,16 +2843,20 @@
         .duration(duration)
         .ease(d3.easeLinear);
         
-      timeLabel
-        .transition(numberTransition)
-        .tween("text", function() {
-          const oldTime = this.textContent || frame.time;
-          const targetTime = frame.time;
-          return t => {
-            // 动画完全结束前，保持旧时间节点，从而保证每个时间节点都有平等的展示时间（包括第一个节点）
-            this.textContent = t >= 1 ? targetTime : oldTime;
-          };
-        });
+      if (!animate) {
+        timeLabel.interrupt().text(frame.time);
+      } else {
+        timeLabel
+          .transition(numberTransition)
+          .tween("text", function() {
+            const oldTime = this.textContent || frame.time;
+            const targetTime = frame.time;
+            return t => {
+              // 动画完全结束前，保持旧时间节点，从而保证每个时间节点都有平等的展示时间（包括第一个节点）
+              this.textContent = t >= 1 ? targetTime : oldTime;
+            };
+          });
+      }
 
       const axisLayout = getAxisTickLayout();
 
