@@ -2119,7 +2119,7 @@
         ? margin.left
         : margin.left + Math.min(30, Math.ceil(valueLabelGutter * 0.4));
 
-      const rangeEnd = WIDTH - margin.right;
+      const rangeEnd = Math.max(rangeStart + 100, WIDTH - margin.right - valueLabelGutter);
 
       if (mode === "smooth-split") {
         const zeroPosition =
