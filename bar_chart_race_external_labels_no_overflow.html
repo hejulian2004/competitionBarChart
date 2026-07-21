@@ -3317,10 +3317,7 @@
         )
       );
 
-      const valueGutter = getValueLabelGutter();
-      margin.right = isPortrait
-        ? Math.max(170, Math.min(320, valueGutter + 28))
-        : Math.max(150, Math.min(320, valueGutter + 16));
+      margin.right = isPortrait ? 52 : 42;
 
       titleLabel.attr("x", TITLE_LEFT);
       subtitleLabel.attr("x", TITLE_LEFT);
