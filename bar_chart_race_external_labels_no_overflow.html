@@ -3328,23 +3328,32 @@
       const isPortrait = WIDTH < 960;
       const hasTitle = Boolean(document.querySelector("#titleInput")?.value.trim());
       const hasSubtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
-      const hasDanmaku = isDanmakuEnabled() && danmakuMap.size > 0;
+
+      let maxDanmakuHeight = 0;
+      if (isDanmakuEnabled() && danmakuMap.size > 0) {
+        danmakuMap.forEach(text => {
+          const layout = getDanmakuCardLayout(text);
+          if (layout && layout.cardHeight > maxDanmakuHeight) {
+            maxDanmakuHeight = layout.cardHeight;
+          }
+        });
+      }
 
       if (!hasTitle && !hasSubtitle) {
-        if (hasDanmaku) {
-          margin.top = 104;
+        if (maxDanmakuHeight > 0) {
+          margin.top = 14 + maxDanmakuHeight + 14 + 42;
         } else {
           margin.top = 58;
         }
       } else if (hasTitle && !hasSubtitle) {
-        if (hasDanmaku) {
-          margin.top = isPortrait ? 156 : 142;
+        if (maxDanmakuHeight > 0) {
+          margin.top = 64 + maxDanmakuHeight + 14 + 42;
         } else {
           margin.top = 118;
         }
       } else {
-        if (hasDanmaku) {
-          margin.top = isPortrait ? 180 : 162;
+        if (maxDanmakuHeight > 0) {
+          margin.top = 96 + maxDanmakuHeight + 14 + 42;
         } else {
           margin.top = 154;
         }
@@ -4010,7 +4019,7 @@
         timeLabel.interrupt().text(frame.time);
         renderDanmakuDOM(danmakuGroup, frame.time, danmakuMap.get(getDanmakuKey(frame.time)));
       } else {
-        const oldTime = timeLabel.node().textContent || frame.time;
+        const oldTime = dataFrameIndex > 0 ? raceData[dataFrameIndex - 1].time : frame.time;
         const targetTime = frame.time;
 
         timeLabel
@@ -4500,42 +4509,84 @@
 
     }
 
+    function getDanmakuCardLayout(text) {
+      if (!isDanmakuEnabled() || !text) return null;
+      const lines = String(text).split("\n").map(s => s.trim()).filter(Boolean);
+      if (lines.length === 0) return null;
+
+      const hasTitle = Boolean(document.querySelector("#titleInput")?.value.trim());
+      const hasSubtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
+
+      let startY = 14;
+      if (hasTitle && hasSubtitle) {
+        startY = 96;
+      } else if (hasTitle || hasSubtitle) {
+        startY = 64;
+      }
+
+      const startX = CHART_SIDE_PADDING;
+      const cardWidth = WIDTH - CHART_SIDE_PADDING * 2;
+      const lineGap = 22;
+      const cardHeight = 32 + lines.length * lineGap + 8;
+
+      return {
+        startX,
+        startY,
+        cardWidth,
+        cardHeight,
+        lines
+      };
+    }
+
     function renderDanmakuDOM(group, time, text) {
       group.selectAll("*").remove();
       if (!isDanmakuEnabled() || !text) {
         group.style("display", "none");
         return;
       }
+
+      const layout = getDanmakuCardLayout(text);
+      if (!layout) {
+        group.style("display", "none");
+        return;
+      }
+
       group.style("display", null);
 
-      const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
-      const isPortrait = WIDTH < 960;
-      const startX = (isPortrait || !hasTitle)
-        ? TITLE_LEFT
-        : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - 520);
-      const startY = margin.top - 54;
+      group.append("rect")
+        .attr("x", layout.startX)
+        .attr("y", layout.startY)
+        .attr("width", layout.cardWidth)
+        .attr("height", layout.cardHeight)
+        .attr("rx", 12)
+        .attr("ry", 12)
+        .attr("fill", "#eff6ff")
+        .attr("stroke", "#dbeafe")
+        .attr("stroke-width", 1.5);
 
       group.append("text")
-        .attr("x", startX)
-        .attr("y", startY)
+        .attr("x", layout.startX + 16)
+        .attr("y", layout.startY + 24)
         .attr("font-size", 13)
         .attr("font-weight", 700)
         .attr("fill", "#2563eb")
-        .text(`📌 ${getDanmakuKey(time)}`);
+        .text(`● 节点 · ${getDanmakuKey(time)}`);
 
-      const textEl = group.append("text")
-        .attr("x", startX)
-        .attr("y", startY + 24)
-        .attr("font-size", 18)
-        .attr("font-weight", 800)
-        .attr("fill", "#0f172a")
-        .text(text);
+      const maxW = layout.cardWidth - 32;
+      layout.lines.forEach((lineText, i) => {
+        const textEl = group.append("text")
+          .attr("x", layout.startX + 16)
+          .attr("y", layout.startY + 24 + 22 * (i + 1))
+          .attr("font-size", 16)
+          .attr("font-weight", 800)
+          .attr("fill", "#0f172a")
+          .text(lineText);
 
-      const textWidth = measureLogicalText(text, 18, 800);
-      const maxW = WIDTH - startX - CHART_SIDE_PADDING - 10;
-      if (textWidth > maxW) {
-        textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
-      }
+        const textWidth = measureLogicalText(lineText, 16, 800);
+        if (textWidth > maxW) {
+          textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
+        }
+      });
     }
 
     function updatePreviewTable() {
@@ -5977,27 +6028,47 @@
       const frameKey = getDanmakuKey(frame.time);
       if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
         const text = danmakuMap.get(frameKey);
-        const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
-        const isPortrait = WIDTH < 960;
+        const layout = getDanmakuCardLayout(text);
+        if (layout) {
+          context.save();
 
-        const startX = (isPortrait || !hasTitle)
-          ? TITLE_LEFT
-          : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - 520);
+          context.fillStyle = "#eff6ff";
+          fillRoundedRect(
+            context,
+            layout.startX,
+            layout.startY,
+            layout.cardWidth,
+            layout.cardHeight,
+            12
+          );
 
-        const startY = margin.top - 54;
+          context.strokeStyle = "#dbeafe";
+          context.lineWidth = 1.5;
+          drawRoundedStroke(
+            context,
+            layout.startX,
+            layout.startY,
+            layout.cardWidth,
+            layout.cardHeight,
+            12
+          );
 
-        context.save();
+          context.fillStyle = "#2563eb";
+          context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          context.textAlign = "left";
+          context.textBaseline = "alphabetic";
+          context.fillText(`● 节点 · ${frameKey}`, layout.startX + 16, layout.startY + 24);
 
-        context.fillStyle = "#2563eb";
-        context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(`📌 ${frameKey}`, startX, startY);
+          context.fillStyle = "#0f172a";
+          context.font = '800 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
+          const maxTextW = layout.cardWidth - 32;
 
-        const maxTextW = Math.max(120, WIDTH - startX - CHART_SIDE_PADDING - 10);
-        context.fillStyle = "#0f172a";
-        context.font = '800 18px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(text, startX, startY + 24, maxTextW);
+          layout.lines.forEach((lineText, i) => {
+            context.fillText(lineText, layout.startX + 16, layout.startY + 24 + 22 * (i + 1), maxTextW);
+          });
 
-        context.restore();
+          context.restore();
+        }
       }
 
       context.restore();
