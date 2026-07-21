@@ -907,11 +907,6 @@
         </div>
 
         <div class="field">
-          <label for="chartWidthScaleInput">图表宽度缩放 (<span id="chartWidthScaleValue">100% (1280px)</span>)</label>
-          <input id="chartWidthScaleInput" type="range" min="70" max="160" value="100" step="5" />
-        </div>
-
-        <div class="field">
           <label for="enableGradientInput">柱体颜色与横轴</label>
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;margin-bottom:4px;">
             <input id="enableGradientInput" type="checkbox" checked />
@@ -949,7 +944,7 @@
             播放速度
             <span id="speedValue" class="range-value">1.00×</span>
           </label>
-          <input id="speedInput" type="range" min="0.25" max="5" step="0.25" value="1" />
+          <input id="speedInput" type="range" min="0.1" max="5" step="0.1" value="1" />
         </div>
 
         <div class="field">
@@ -1045,7 +1040,7 @@
 
       <div class="color-settings" style="margin-top: 14px;">
         <div class="color-settings-header">
-          <div class="color-settings-title">时间节点解说弹幕（支持自定义 1～3 行字幕内容）</div>
+          <div class="color-settings-title">时间节点解说弹幕（支持自定义 1～4 行字幕内容）</div>
           <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
             <input id="showDanmakuInput" type="checkbox" checked />
             启用解说/弹幕显示
@@ -1068,6 +1063,9 @@
 
             <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 3 行:</span>
             <input id="danmakuLine3Input" type="text" placeholder="第 3 行字幕内容（可选，例如：大模型应用全面爆发）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+
+            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 4 行:</span>
+            <input id="danmakuLine4Input" type="text" placeholder="第 4 行字幕内容（可选，例如：生态建设成果显著）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
           </div>
         </div>
 
@@ -1472,6 +1470,7 @@
       const line1El = document.querySelector("#danmakuLine1Input");
       const line2El = document.querySelector("#danmakuLine2Input");
       const line3El = document.querySelector("#danmakuLine3Input");
+      const line4El = document.querySelector("#danmakuLine4Input");
       if (!timeSelect || !addBtn) return;
 
       const key = getDanmakuKey(timeSelect.value);
@@ -1480,18 +1479,20 @@
         addBtn.classList.add("primary");
         const fullText = danmakuMap.get(key) || "";
         const lines = fullText.split("\n");
-        if (line1El && document.activeElement !== line1El && document.activeElement !== line2El && document.activeElement !== line3El) {
+        if (line1El && document.activeElement !== line1El && document.activeElement !== line2El && document.activeElement !== line3El && document.activeElement !== line4El) {
           line1El.value = lines[0] || "";
           if (line2El) line2El.value = lines[1] || "";
           if (line3El) line3El.value = lines[2] || "";
+          if (line4El) line4El.value = lines[3] || "";
         }
       } else {
         addBtn.textContent = "保存解说";
         addBtn.classList.remove("primary");
-        if (line1El && document.activeElement !== line1El && document.activeElement !== line2El && document.activeElement !== line3El) {
+        if (line1El && document.activeElement !== line1El && document.activeElement !== line2El && document.activeElement !== line3El && document.activeElement !== line4El) {
           line1El.value = "";
           if (line2El) line2El.value = "";
           if (line3El) line3El.value = "";
+          if (line4El) line4El.value = "";
         }
       }
     }
@@ -1501,6 +1502,7 @@
       const line1El = document.querySelector("#danmakuLine1Input");
       const line2El = document.querySelector("#danmakuLine2Input");
       const line3El = document.querySelector("#danmakuLine3Input");
+      const line4El = document.querySelector("#danmakuLine4Input");
       if (!timeSelect) return;
 
       const key = getDanmakuKey(time);
@@ -1512,10 +1514,12 @@
         if (line1El) line1El.value = lines[0] || "";
         if (line2El) line2El.value = lines[1] || "";
         if (line3El) line3El.value = lines[2] || "";
+        if (line4El) line4El.value = lines[3] || "";
       } else {
         if (line1El) line1El.value = "";
         if (line2El) line2El.value = "";
         if (line3El) line3El.value = "";
+        if (line4El) line4El.value = "";
       }
 
       if (line1El) line1El.focus();
@@ -1588,25 +1592,28 @@
       const line1El = document.querySelector("#danmakuLine1Input");
       const line2El = document.querySelector("#danmakuLine2Input");
       const line3El = document.querySelector("#danmakuLine3Input");
+      const line4El = document.querySelector("#danmakuLine4Input");
       if (!timeSelect) return;
 
       const key = getDanmakuKey(timeSelect.value);
       const l1 = line1El ? line1El.value.trim() : "";
       const l2 = line2El ? line2El.value.trim() : "";
       const l3 = line3El ? line3El.value.trim() : "";
+      const l4 = line4El ? line4El.value.trim() : "";
 
-      if (!key || (!l1 && !l2 && !l3)) {
+      if (!key || (!l1 && !l2 && !l3 && !l4)) {
         setStatus("请选择时间节点并至少输入一行解说文字！", true);
         return;
       }
 
-      const combinedText = [l1, l2, l3].join("\n").replace(/\n+$/, "");
+      const combinedText = [l1, l2, l3, l4].join("\n").replace(/\n+$/, "");
       const isUpdate = danmakuMap.has(key);
       danmakuMap.set(key, combinedText);
 
       if (line1El) line1El.value = "";
       if (line2El) line2El.value = "";
       if (line3El) line3El.value = "";
+      if (line4El) line4El.value = "";
 
       renderDanmakuList();
       saveAppState();
@@ -2981,7 +2988,7 @@
 
     function getPlaybackSpeed() {
       const rawSpeed = Number(document.querySelector("#speedInput").value) || 1;
-      return Math.max(0.25, Math.min(5, rawSpeed));
+      return Math.max(0.1, Math.min(5, rawSpeed));
     }
 
     function getFrameDuration() {
@@ -3200,66 +3207,6 @@
     const textMeasureContext =
       textMeasureCanvas.getContext("2d");
 
-    function getChartWidthScale() {
-      const el = document.querySelector("#chartWidthScaleInput");
-      const raw = el ? Number(el.value) : 100;
-      return Number.isFinite(raw) && raw >= 50 && raw <= 250 ? raw : 100;
-    }
-
-    function updateChartWidth() {
-      const mode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
-      const scale = getChartWidthScale();
-
-      let targetBaseW = 1280;
-      let targetBaseH = 720;
-
-      if (mode === "3:4") {
-        targetBaseW = 810;
-        targetBaseH = 1080;
-      } else if (mode === "9:16") {
-        targetBaseW = 720;
-        targetBaseH = 1280;
-      } else if (mode === "4:5") {
-        targetBaseW = 864;
-        targetBaseH = 1080;
-      }
-
-      HEIGHT = targetBaseH;
-      baseWidth = targetBaseW;
-      WIDTH = Math.round(baseWidth * (scale / 100));
-
-      const label = document.querySelector("#chartWidthScaleValue");
-      if (label) {
-        label.textContent = `${scale}% (${WIDTH}×${HEIGHT}px)`;
-      }
-
-      svg.attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
-        .attr("width", WIDTH)
-        .attr("height", HEIGHT);
-
-      const captureArea = document.querySelector("#captureArea");
-      if (captureArea) {
-        captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
-        if (document.fullscreenElement === captureArea) {
-          captureArea.style.width = "100%";
-          captureArea.style.height = "100%";
-          captureArea.style.maxWidth = "100%";
-          captureArea.style.maxHeight = "100%";
-          captureArea.style.margin = "0";
-        } else {
-          const ratio = WIDTH / HEIGHT;
-          captureArea.style.maxWidth = "100%";
-          captureArea.style.maxHeight = "min(74vh, 700px)";
-          captureArea.style.width = `min(100%, calc(min(74vh, 700px) * ${ratio}))`;
-          captureArea.style.margin = "0 auto";
-        }
-      }
-
-      if (raceData && raceData.length > 0) {
-        updateResponsiveChartMargins();
-        renderFrame(raceData[currentFrameIndex], false);
-      }
-    }
 
     function updateResponsiveChartMargins() {
       const longestNameWidth = d3.max(
@@ -4474,10 +4421,14 @@
         targetPlotY - 12 - startY
       );
 
+      const SHRINK = 2/3;
+      const sw = Math.max(40, Math.round(cardWidth * SHRINK));
+      const sx = startX + Math.round((cardWidth - sw) / 2);
+
       return {
-        startX,
+        startX: sx,
         startY,
-        cardWidth,
+        cardWidth: sw,
         cardHeight,
         lines
       };
@@ -4510,32 +4461,31 @@
         .attr("stroke-width", 1.5);
 
       const headerY = layout.startY + 28;
-      group.append("text")
-        .attr("x", layout.startX + 20)
-        .attr("y", headerY)
-        .attr("font-size", 16)
-        .attr("font-weight", 700)
-        .attr("fill", "#2563eb")
-        .text(`● 节点 · ${getDanmakuKey(time)}`);
-
       const maxW = layout.cardWidth - 40;
       const lineCount = layout.lines.length;
       const availableTextH = layout.cardHeight - 40;
-      const lineGap = lineCount > 1
-        ? Math.min(38, Math.floor((availableTextH - 10) / lineCount))
-        : 34;
 
+      const fontSizeScale = { 1: 1.35, 2: 1.0, 3: 0.85, 4: 0.72 };
+      const fs = fontSizeScale[lineCount] || 1.0;
+      const fontSize = Math.max(14, Math.round(24 * fs));
+
+      const lineGap = lineCount > 1
+        ? Math.min(Math.round(fontSize * 1.5), Math.floor((availableTextH - 10) / lineCount))
+        : Math.round(fontSize * 1.4);
+
+      const textBlockH = (lineCount - 1) * lineGap + fontSize;
+      const baseY = layout.startY + Math.round((layout.cardHeight - textBlockH) / 2) + fontSize;
       layout.lines.forEach((lineText, i) => {
-        const lineY = headerY + 8 + (i + 1) * lineGap;
+        const lineY = baseY + i * lineGap;
         const textEl = group.append("text")
           .attr("x", layout.startX + 20)
           .attr("y", lineY)
-          .attr("font-size", 24)
+          .attr("font-size", fontSize)
           .attr("font-weight", 800)
           .attr("fill", "#0f172a")
           .text(lineText);
 
-        const textWidth = measureLogicalText(lineText, 24, 800);
+        const textWidth = measureLogicalText(lineText, fontSize, 800);
         if (textWidth > maxW) {
           textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
         }
@@ -4576,7 +4526,7 @@
 
     const configInputIds = [
       "titleInput", "subtitleInput", "barsInput", "maxBarHeightInput", "showZeroInput",
-      "aspectRatioModeInput", "chartWidthScaleInput", "enableGradientInput", "showXAxisInput",
+      "aspectRatioModeInput", "enableGradientInput", "showXAxisInput",
       "xAxisModeInput", "valueScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "exportFilenameInput", "videoFormatInput", "videoFpsInput", "videoResolutionInput",
       "videoCoverFrameInput", "valueStepInput", "unitInput", "dateOpacityInput",
@@ -6011,14 +5961,6 @@
           );
 
           const headerY = layout.startY + 28;
-          context.fillStyle = "#2563eb";
-          context.font = '700 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          context.textAlign = "left";
-          context.textBaseline = "alphabetic";
-          context.fillText(`● 节点 · ${frameKey}`, layout.startX + 20, headerY);
-
-          context.fillStyle = "#0f172a";
-          context.font = '800 24px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
           const maxTextW = layout.cardWidth - 40;
           const lineCount = layout.lines.length;
           const availableTextH = layout.cardHeight - 40;
@@ -6027,7 +5969,7 @@
             : 34;
 
           layout.lines.forEach((lineText, i) => {
-            const lineY = headerY + 8 + (i + 1) * lineGap;
+            const lineY = layout.startY + 20 + (i + 1) * lineGap;
             context.fillText(lineText, layout.startX + 20, lineY, maxTextW);
           });
 
@@ -7597,12 +7539,6 @@
     document.querySelector("#exitFullscreenButton")
       .addEventListener("click", () => document.exitFullscreen?.());
 
-    document.querySelector("#chartWidthScaleInput")
-      ?.addEventListener("input", updateChartWidth);
-
-    document.querySelector("#aspectRatioModeInput")
-      ?.addEventListener("change", updateChartWidth);
-
     const dateOpacityEl = document.querySelector("#dateOpacityInput");
     if (dateOpacityEl) {
       dateOpacityEl.addEventListener("input", updateDateOpacity);
@@ -7779,13 +7715,12 @@
   }
 
   function getSelectedScale() {
-    const raw = Number(document.querySelector("#chartWidthScaleInput")?.value || 100);
-    return Number.isFinite(raw) ? clamp(raw, 70, 160) : 100;
+    return 1;
   }
 
   function getExactLogicalDimensions() {
     const preset = getAspectPreset();
-    const unit = Math.max(1, Math.round(preset.baseUnit * getSelectedScale() / 100));
+    const unit = Math.max(1, Math.round(preset.baseUnit * getSelectedScale()));
     return {
       width: preset.ratioWidth * unit,
       height: preset.ratioHeight * unit
@@ -7844,11 +7779,21 @@
     );
     const selectedRatio = selected.width / selected.height;
     const expectedRatio = preset.ratioWidth / preset.ratioHeight;
-    return Math.abs(selectedRatio - expectedRatio) < 0.001 ? selected : fallback;
+    const base = Math.abs(selectedRatio - expectedRatio) < 0.001 ? selected : fallback;
+    const scale = getSelectedScale();
+    return {
+      width: Math.max(2, Math.round(base.width * scale / 2) * 2),
+      height: Math.max(2, Math.round(base.height * scale / 2) * 2)
+    };
   };
 
   getGifDimensions = function patchedGetGifDimensions() {
-    return { ...getAspectPreset().gif };
+    const base = { ...getAspectPreset().gif };
+    const scale = getSelectedScale();
+    return {
+      width: Math.max(2, Math.round(base.width * scale / 2) * 2),
+      height: Math.max(2, Math.round(base.height * scale / 2) * 2)
+    };
   };
 
   function syncCaptureAspectRatio() {
@@ -7898,11 +7843,6 @@
       valueLabelClipRect.attr("height", HEIGHT);
       syncCaptureAspectRatio();
       clearDanmakuCache();
-
-      const label = document.querySelector("#chartWidthScaleValue");
-      if (label) {
-        label.textContent = `${getSelectedScale()}% · ${preset.label} (${WIDTH}×${HEIGHT}px)`;
-      }
 
       updateResponsiveChartMargins();
       if (render && raceData.length > 0) {
@@ -7969,20 +7909,25 @@
       ? Math.max(22, Math.round(24 * uiScale))
       : Math.max(13, Math.round(18 * uiScale));
 
+    const SHRINK_A = 2/3;
+    const swA = Math.max(40, Math.round(cardWidth * SHRINK_A));
+    const sxA = startX + Math.round((cardWidth - swA) / 2);
+    const spA = Math.max(6, Math.round(padding * SHRINK_A));
+
     return {
-      startX,
+      startX: sxA,
       cardY,
-      cardWidth,
+      cardWidth: swA,
       cardHeight,
-      cardRadius,
-      padding,
+      cardRadius: Math.max(8, Math.round(cardRadius)),
+      padding: spA,
       chartTop: cardY + cardHeight + chartGap + 42,
       labelText: `节点 · ${key}`,
-      labelOffsetX: padding,
+      labelOffsetX: spA,
       labelBaseline: Math.round(cardHeight * 0.33),
-      textOffsetX: padding,
+      textOffsetX: spA,
       textBaseline: Math.round(cardHeight * 0.76),
-      textMaxWidth: Math.max(48, cardWidth - padding * 2),
+      textMaxWidth: Math.max(48, swA - spA * 2),
       labelFontSize,
       textFontSize,
       dotRadius: Math.max(3, Math.round((isPortrait ? 5 : 4) * uiScale)),
@@ -8105,29 +8050,12 @@
       .attr("height", layout.cardHeight)
       .attr("rx", layout.cardRadius)
       .attr("fill", "#eff6ff")
-      .attr("stroke", "#bfdbfe")
+      .attr("stroke", "#dbeafe")
       .attr("stroke-width", 1);
-
-    const dotX = layout.startX + layout.labelOffsetX + layout.dotRadius;
-    const dotY = layout.cardY + layout.labelBaseline - layout.dotRadius;
-
-    danmakuGroup.append("circle")
-      .attr("cx", dotX)
-      .attr("cy", dotY)
-      .attr("r", layout.dotRadius)
-      .attr("fill", "#2563eb");
-
-    danmakuGroup.append("text")
-      .attr("x", dotX + layout.dotRadius + layout.dotLabelGap)
-      .attr("y", layout.cardY + layout.labelBaseline)
-      .attr("font-size", layout.labelFontSize)
-      .attr("font-weight", 700)
-      .attr("fill", "#2563eb")
-      .text(layout.labelText);
 
     const textElement = danmakuGroup.append("text")
       .attr("x", layout.startX + layout.textOffsetX)
-      .attr("y", layout.cardY + layout.textBaseline)
+      .attr("y", layout.cardY + Math.round(layout.cardHeight * 0.55))
       .attr("font-size", layout.textFontSize)
       .attr("font-weight", 800)
       .attr("fill", "#0f172a")
@@ -8237,22 +8165,6 @@
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
 
-    const dotX = pixelLayout.paddingX + pixelLayout.dotRadius;
-    const dotY = pixelLayout.labelBaseline - pixelLayout.dotRadius;
-    context.fillStyle = "#2563eb";
-    context.beginPath();
-    context.arc(dotX, dotY, pixelLayout.dotRadius, 0, Math.PI * 2);
-    context.fill();
-
-    context.font =
-      `700 ${pixelLayout.labelFontSize}px ` +
-      '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
-    context.fillText(
-      `节点 · ${entry.key}`,
-      dotX + pixelLayout.dotRadius + pixelLayout.dotLabelGap,
-      pixelLayout.labelBaseline
-    );
-
     context.fillStyle = "#0f172a";
     context.font =
       `800 ${pixelLayout.textFontSize}px ` +
@@ -8260,7 +8172,7 @@
     context.fillText(
       entry.text,
       pixelLayout.paddingX,
-      pixelLayout.textBaseline,
+      Math.round(pixelLayout.height * 0.55),
       pixelLayout.maxTextWidth
     );
 
@@ -8286,7 +8198,7 @@
     );
     context.fillStyle = "#eff6ff";
     context.fill();
-    context.strokeStyle = "#bfdbfe";
+    context.strokeStyle = "#dbeafe";
     context.lineWidth = pixelLayout.lineWidth;
     context.stroke();
     context.restore();
@@ -8484,8 +8396,6 @@
 
   document.querySelector("#aspectRatioModeInput")
     ?.addEventListener("change", syncAspectAndExportSettings);
-  document.querySelector("#chartWidthScaleInput")
-    ?.addEventListener("input", () => applyExactAspectGeometry(true));
   document.querySelector("#titleInput")
     ?.addEventListener("input", clearDanmakuCache);
   document.querySelector("#subtitleInput")
@@ -8513,27 +8423,12 @@
 (() => {
   "use strict";
 
-  const entryScript = document.currentScript;
-  const baseUrl = new URL(".", entryScript?.src || window.location.href);
-
-  function loadClassicScript(filename, onload) {
-    const script = document.createElement("script");
-    script.src = new URL(filename, baseUrl).href;
-    script.async = false;
-    script.onload = onload;
-    script.onerror = () => console.error(`${filename} 加载失败`);
-    document.head.appendChild(script);
-  }
-
-  loadClassicScript("main-core.js", () => {
-    const core = {
-      updateMargins: updateResponsiveChartMargins,
-      renderFrame,
-      drawCanvasFrame: drawDirectCanvasVideoFrame
-    };
-
-    loadClassicScript("main-layout-base.js", () => {
-      const MAX_LINES = 3;
+  const core = {
+    updateMargins: updateResponsiveChartMargins,
+    renderFrame,
+    drawCanvasFrame: drawDirectCanvasVideoFrame
+  };
+      const MAX_LINES = 4;
       const CACHE_LIMIT = 96;
       const FADE_START = 0.70;
       const FADE_END = 0.94;
@@ -8596,7 +8491,7 @@
         return lines.slice(0, maximumLines);
       }
 
-      function getDanmakuTextLines(text, metrics, maxLines = 3) {
+      function getDanmakuTextLines(text, metrics, maxLines = MAX_LINES) {
         const rawText = String(text ?? "").trim();
         if (!rawText) return [];
 
@@ -8644,10 +8539,10 @@
       function getReservedLineCount(metrics = getBaseMetrics()) {
         let count = 1;
         danmakuMap.forEach(text => {
-          const lines = getDanmakuTextLines(text, metrics, 3);
+          const lines = getDanmakuTextLines(text, metrics, MAX_LINES);
           count = Math.max(count, lines.length || 1);
         });
-        return Math.min(3, count);
+        return Math.min(MAX_LINES, count);
       }
 
       function getDanmakuLayout(key = "", text = "") {
@@ -8656,34 +8551,45 @@
         const title = Boolean(document.querySelector("#titleInput")?.value.trim());
         const subtitle = Boolean(document.querySelector("#subtitleInput")?.value.trim());
         const headerBottom = subtitle ? 104 : title ? 72 : 22;
-        const labelArea = Math.max(22, Math.round(25 * metrics.scale));
-        const labelGap = Math.max(6, Math.round(8 * metrics.scale));
-        const cardHeight =
-          metrics.padding +
-          labelArea +
-          labelGap +
-          lineCount * metrics.lineHeight +
-          metrics.padding;
+        const cardWidth = WIDTH - CHART_SIDE_PADDING * 2;
+
+        let textFontSize = metrics.textFontSize;
+        let lineHeight = metrics.lineHeight;
+        // 按行数缩放字号：行数越多字号越小，行数越少字号越大
+        const sizeScale = { 1: 1.30, 2: 1.0, 3: 0.84, 4: 0.72 };
+        const lineScale = { 1: 1.0, 2: 1.0, 3: 0.90, 4: 0.82 };
+        const ss = sizeScale[lineCount] || 1.0;
+        const ls = lineScale[lineCount] || 1.0;
+        textFontSize = Math.max(12, Math.round(textFontSize * ss));
+        lineHeight = Math.max(14, Math.round(lineHeight * ls));
+
+        const adjustedMetrics = { ...metrics, textFontSize, lineHeight };
+        const cardHeight = metrics.padding * 2 + lineCount * lineHeight;
         const cardY = headerBottom + Math.max(10, Math.round(12 * metrics.scale));
         const textLines = getDanmakuTextLines(
           text,
-          metrics,
+          adjustedMetrics,
           lineCount
         );
 
+        const SHRINK = 2/3;
+        const sw = Math.max(40, Math.round(cardWidth * SHRINK));
+        const sx = CHART_SIDE_PADDING + Math.round((cardWidth - sw) / 2);
+        const sp = Math.max(6, Math.round(metrics.padding * SHRINK));
+
         return {
-          x: Math.round((WIDTH - metrics.cardWidth) / 2),
+          x: sx,
           y: cardY,
-          width: metrics.cardWidth,
+          width: sw,
           height: cardHeight,
-          radius: Math.max(10, Math.round(14 * metrics.scale)),
-          padding: metrics.padding,
+          radius: Math.max(8, Math.round(14 * metrics.scale)),
+          padding: sp,
           labelFontSize: metrics.labelFontSize,
-          textFontSize: metrics.textFontSize,
-          lineHeight: metrics.lineHeight,
+          textFontSize,
+          lineHeight,
           labelBaseline: metrics.padding + metrics.labelFontSize,
           textBaseline:
-            metrics.padding + labelArea + labelGap + metrics.textFontSize,
+            metrics.padding + metrics.labelFontSize + Math.max(6, Math.round(8 * metrics.scale)) + textFontSize,
           dotRadius: Math.max(3, Math.round(4.5 * metrics.scale)),
           dotGap: Math.max(8, Math.round(10 * metrics.scale)),
           textLines,
@@ -8849,31 +8755,19 @@
           .attr("height", layout.height)
           .attr("rx", layout.radius)
           .attr("fill", "#eff6ff")
-          .attr("stroke", "#bfdbfe");
-
-        const dotX = layout.x + layout.padding + layout.dotRadius;
-        const dotY = layout.y + layout.labelBaseline - layout.dotRadius;
-        danmakuGroup.append("circle")
-          .attr("cx", dotX)
-          .attr("cy", dotY)
-          .attr("r", layout.dotRadius)
-          .attr("fill", "#2563eb");
-        danmakuGroup.append("text")
-          .attr("x", dotX + layout.dotRadius + layout.dotGap)
-          .attr("y", layout.y + layout.labelBaseline)
-          .attr("font-size", layout.labelFontSize)
-          .attr("font-weight", 700)
-          .attr("fill", "#2563eb")
-          .text(layout.labelText);
+          .attr("stroke", "#dbeafe");
 
         const body = danmakuGroup.append("text")
           .attr("font-size", layout.textFontSize)
           .attr("font-weight", 800)
           .attr("fill", "#0f172a");
+        const lineCount = layout.textLines.length;
+        const textBlockH = (lineCount - 1) * layout.lineHeight + layout.textFontSize;
+        const startY = Math.round((layout.height - textBlockH) / 2) + layout.textFontSize;
         layout.textLines.forEach((line, index) => {
           body.append("tspan")
             .attr("x", layout.x + layout.padding)
-            .attr("y", layout.y + layout.textBaseline + index * layout.lineHeight)
+            .attr("y", layout.y + startY + index * layout.lineHeight)
             .text(line);
         });
       }
@@ -8952,21 +8846,9 @@
         context.textAlign = "left";
         context.textBaseline = "alphabetic";
 
-        const dotX = layout.padding + layout.dotRadius;
-        const dotY = layout.labelBaseline - layout.dotRadius;
-        context.fillStyle = "#2563eb";
-        context.beginPath();
-        context.arc(dotX, dotY, layout.dotRadius, 0, Math.PI * 2);
-        context.fill();
-        context.font =
-          `700 ${layout.labelFontSize}px ` +
-          '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
-        context.fillText(
-          `节点 · ${entry.key}`,
-          dotX + layout.dotRadius + layout.dotGap,
-          layout.labelBaseline
-        );
-
+        const lineCount = layout.textLines.length;
+        const textBlockH = (lineCount - 1) * layout.lineHeight + layout.textFontSize;
+        const startY = Math.round((layout.height - textBlockH) / 2) + layout.textFontSize;
         context.fillStyle = "#0f172a";
         context.font =
           `800 ${layout.textFontSize}px ` +
@@ -8975,7 +8857,7 @@
           context.fillText(
             line,
             layout.padding,
-            layout.textBaseline + index * layout.lineHeight
+            startY + index * layout.lineHeight
           );
         });
 
@@ -9005,7 +8887,7 @@
           );
           context.fillStyle = "#eff6ff";
           context.fill();
-          context.strokeStyle = "#bfdbfe";
+          context.strokeStyle = "#dbeafe";
           context.lineWidth = layout.lineWidth;
           context.stroke();
         } else {
@@ -9156,9 +9038,7 @@
       if (raceData.length > 0) {
         renderFrame(raceData[currentFrameIndex], false);
       }
-    });
-  });
-})();
+    })();
 
 </script>
 </body>

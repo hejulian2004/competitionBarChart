@@ -1,18 +1,18 @@
-    let baseWidth = 1280;
-    let WIDTH = 1280;
-    let HEIGHT = 720;
-    const BASE_FRAME_DURATION = 1500;
+    baseWidth = 1280;
+    WIDTH = 1280;
+    HEIGHT = 720;
+    BASE_FRAME_DURATION = 1500;
 
-    const MOTION_RATIO = 0.82;
-    const MOTION_EASING = d3.easeCubicInOut;
+    MOTION_RATIO = 0.82;
+    MOTION_EASING = d3.easeCubicInOut;
 
-    const GIF_WIDTH = 960;
-    const GIF_HEIGHT = 540;
+    GIF_WIDTH = 960;
+    GIF_HEIGHT = 540;
 
-    const NAME_BAR_GAP = 12;
-    const CHART_SIDE_PADDING = 16;
-    const VALUE_ICON_SIZE = 38;
-    const VALUE_ICON_TEXT_GAP = 9;
+    NAME_BAR_GAP = 12;
+    CHART_SIDE_PADDING = 16;
+    VALUE_ICON_SIZE = 38;
+    VALUE_ICON_TEXT_GAP = 9;
     const VALUE_BAR_GAP = 10;
     const MIN_VALUE_LABEL_GUTTER = 40;
     const MAX_VALUE_LABEL_GUTTER = 180;
@@ -3342,14 +3342,6 @@
         .attr("stroke-width", 1.5);
 
       const headerY = layout.startY + 28;
-      group.append("text")
-        .attr("x", layout.startX + 20)
-        .attr("y", headerY)
-        .attr("font-size", 16)
-        .attr("font-weight", 700)
-        .attr("fill", "#2563eb")
-        .text(`● 节点 · ${getDanmakuKey(time)}`);
-
       const maxW = layout.cardWidth - 40;
       const lineCount = layout.lines.length;
       const availableTextH = layout.cardHeight - 40;
@@ -3358,7 +3350,7 @@
         : 34;
 
       layout.lines.forEach((lineText, i) => {
-        const lineY = headerY + 8 + (i + 1) * lineGap;
+        const lineY = layout.startY + 20 + (i + 1) * lineGap;
         const textEl = group.append("text")
           .attr("x", layout.startX + 20)
           .attr("y", lineY)
@@ -4843,14 +4835,6 @@
           );
 
           const headerY = layout.startY + 28;
-          context.fillStyle = "#2563eb";
-          context.font = '700 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-          context.textAlign = "left";
-          context.textBaseline = "alphabetic";
-          context.fillText(`● 节点 · ${frameKey}`, layout.startX + 20, headerY);
-
-          context.fillStyle = "#0f172a";
-          context.font = '800 24px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
           const maxTextW = layout.cardWidth - 40;
           const lineCount = layout.lines.length;
           const availableTextH = layout.cardHeight - 40;
@@ -4859,7 +4843,7 @@
             : 34;
 
           layout.lines.forEach((lineText, i) => {
-            const lineY = headerY + 8 + (i + 1) * lineGap;
+            const lineY = layout.startY + 20 + (i + 1) * lineGap;
             context.fillText(lineText, layout.startX + 20, lineY, maxTextW);
           });
 
