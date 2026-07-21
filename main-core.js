@@ -681,21 +681,21 @@
       const symmetricTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.maximumAbsolute * 1.08
+          extent.maximumAbsolute * 1.015
         )
       );
 
       const negativeTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.negativeMagnitude * 1.08
+          extent.negativeMagnitude * 1.015
         )
       );
 
       const positiveTargets = extents.map(
         extent => Math.max(
           minimumMagnitude,
-          extent.positiveMagnitude * 1.08
+          extent.positiveMagnitude * 1.015
         )
       );
 
@@ -739,15 +739,15 @@
           symmetricMaximum:
             getValueExtents(
               fromFrame.values
-            ).maximumAbsolute * 1.08,
+            ).maximumAbsolute * 1.015,
           negativeMagnitude:
             getValueExtents(
               fromFrame.values
-            ).negativeMagnitude * 1.08,
+            ).negativeMagnitude * 1.015,
           positiveMagnitude:
             getValueExtents(
               fromFrame.values
-            ).positiveMagnitude * 1.08
+            ).positiveMagnitude * 1.015
         };
 
       const toState =
@@ -755,15 +755,15 @@
           symmetricMaximum:
             getValueExtents(
               toFrame.values
-            ).maximumAbsolute * 1.08,
+            ).maximumAbsolute * 1.015,
           negativeMagnitude:
             getValueExtents(
               toFrame.values
-            ).negativeMagnitude * 1.08,
+            ).negativeMagnitude * 1.015,
           positiveMagnitude:
             getValueExtents(
               toFrame.values
-            ).positiveMagnitude * 1.08
+            ).positiveMagnitude * 1.015
         };
 
       const currentExtent =
@@ -979,7 +979,7 @@
 
         const positiveMagnitude = frame?.axisState?.positiveMagnitude || Math.max(
           getDynamicAxisMinimumMagnitude(),
-          currentExtent.positiveMagnitude * 1.08
+          currentExtent.positiveMagnitude * 1.015
         );
 
         return [0, positiveMagnitude];
