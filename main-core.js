@@ -884,27 +884,22 @@
       );
     }
 
-    function getValueLabelGutter() {
-      const candidates = [
-        globalValueStats.min,
-        globalValueStats.max,
-        0
-      ];
+    function getValueLabelGutter(frame = null) {
+      let maximumTextWidth = 45;
 
-      let maximumTextWidth =
-        d3.max(
-          candidates,
-          value => measureLogicalText(
-            formatValue(value),
-            22,
-            800
-          )
-        ) || 45;
-
-      if (raceData && raceData.length > 0) {
+      if (frame && frame.values) {
+        Object.entries(frame.values).forEach(([cat, val]) => {
+          const v = Number(val);
+          if (Number.isFinite(v)) {
+            const formatted = formatValue(v);
+            const w = measureLogicalText(formatted, 22, 800);
+            if (w > maximumTextWidth) maximumTextWidth = w;
+          }
+        });
+      } else if (raceData && raceData.length > 0) {
         categories.forEach(cat => {
-          raceData.forEach(frame => {
-            const v = Number(frame?.values?.[cat]);
+          raceData.forEach(f => {
+            const v = Number(f?.values?.[cat]);
             if (Number.isFinite(v)) {
               const formatted = formatValue(v);
               const w = measureLogicalText(formatted, 22, 800);
@@ -919,7 +914,7 @@
         : VALUE_ICON_SIZE;
 
       return Math.max(
-        150,
+        100,
         Math.min(
           320,
           Math.ceil(
@@ -933,7 +928,7 @@
       );
     }
 
-    function configureXAxisScale(domain) {
+    function configureXAxisScale(domain, frame = null) {
       const scaleType = resolveXAxisScaleType();
       const mode = document
         .querySelector("#xAxisModeInput")
@@ -941,7 +936,7 @@
 
       activeXAxisScaleType = scaleType;
 
-      const valueLabelGutter = getValueLabelGutter();
+      const valueLabelGutter = getValueLabelGutter(frame);
 
       const rangeStart = mode === "non-negative"
         ? margin.left
@@ -2826,7 +2821,7 @@
         syncProgress(dataFrameIndex);
       }
 
-      configureXAxisScale([domainMin, domainMax]);
+      configureXAxisScale([domainMin, domainMax], frame);
       yScale.range(getYScaleTargetRange(getMaxCapacityBarCount()));
       yScale.domain(ranking.map(d => d.name));
 
@@ -2859,15 +2854,16 @@
             };
           });
 
+        let currentRenderedTime = null;
         danmakuGroup
           .transition(numberTransition)
           .tween("danmaku", function() {
-            return t => {
+            return function(t) {
               const activeTime = t >= 1 ? targetTime : oldTime;
-              if (this._activeTime !== activeTime) {
-                this._activeTime = activeTime;
+              if (currentRenderedTime !== activeTime) {
+                currentRenderedTime = activeTime;
                 renderDanmakuDOM(
-                  d3.select(this),
+                  danmakuGroup,
                   activeTime,
                   danmakuMap.get(getDanmakuKey(activeTime))
                 );
@@ -4376,7 +4372,7 @@
           frame
         );
 
-      configureXAxisScale([domainMin, domainMax]);
+      configureXAxisScale([domainMin, domainMax], frame);
       const zeroX = xScale(0);
 
       const logicalWidth = WIDTH;
