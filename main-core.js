@@ -3599,6 +3599,12 @@
       isPlaying = true;
       const token = ++playToken;
 
+      if (currentFrameIndex === 0) {
+        renderFrame(raceData[0], 0, false);
+        await sleep(getHoldDuration());
+        if (!isPlaying || token !== playToken) return;
+      }
+
       while (isPlaying && token === playToken && currentFrameIndex < raceData.length - 1) {
         currentFrameIndex += 1;
         renderFrame(raceData[currentFrameIndex], currentFrameIndex, true);
@@ -4952,14 +4958,17 @@
       const effectiveFps =
         framesPerPeriod / periodSeconds;
 
+      const holdDurationSeconds = periodSeconds * (1 - MOTION_RATIO);
+      const holdFrames = Math.max(1, Math.round(holdDurationSeconds * fps));
+
       const totalFrames =
         intervalCount > 0
-          ? intervalCount * framesPerPeriod
+          ? holdFrames + intervalCount * framesPerPeriod
           : 1;
 
       const durationSeconds =
         intervalCount > 0
-          ? intervalCount * periodSeconds
+          ? holdDurationSeconds + intervalCount * periodSeconds
           : periodSeconds;
 
       const bitrate = getVideoBitrate(
@@ -5413,7 +5422,7 @@
             raceData[0],
             raceData[0],
             1,
-            1,
+            0,
             true
           );
         } else {
@@ -5421,6 +5430,21 @@
             1,
             Math.round(effectiveFps * 2)
           );
+
+          const holdDurationSeconds = periodSeconds * (1 - MOTION_RATIO);
+          const holdFrames = Math.max(1, Math.round(holdDurationSeconds * fps));
+
+          // Encode initial static hold for node 0 so node 0 gets the exact same static hold duration as all subsequent nodes
+          for (let frameIndex = 0; frameIndex < holdFrames; frameIndex++) {
+            checkCancelled();
+            await encodeCanvasFrame(
+              raceData[0],
+              raceData[0],
+              1,
+              0,
+              frameNumber % keyFrameInterval === 0
+            );
+          }
 
           for (
             let periodIndex = 0;
@@ -5872,11 +5896,12 @@
           maximumRequiredSteps >
           availableMotionFrames;
 
+        const holdDurationSeconds = (exactPeriodDuration / 1000) * (1 - MOTION_RATIO);
+        const holdCentiseconds = Math.round(holdDurationSeconds * 100);
         const totalCentiseconds =
           Math.max(
             1,
-            (intervalCount || 1) *
-            exactPeriodCentiseconds
+            holdCentiseconds + (intervalCount || 1) * exactPeriodCentiseconds
           );
 
         let completedCentiseconds = 0;
@@ -6005,12 +6030,32 @@
             raceData[0],
             raceData[0],
             1,
-            1,
+            0,
             exactPeriodCentiseconds,
             true
           );
         } else {
           let isFirstGifFrame = true;
+
+          const holdDurationSeconds = (exactPeriodDuration / 1000) * (1 - MOTION_RATIO);
+          const holdFrames = Math.max(1, Math.round(holdDurationSeconds * effectiveGifFps));
+          const holdDelayCentiseconds = Math.max(
+            minimumDelayCentiseconds,
+            Math.round((holdDurationSeconds * 100) / holdFrames)
+          );
+
+          for (let frameIndex = 0; frameIndex < holdFrames; frameIndex++) {
+            checkCancelled();
+            await encodeCanvasFrame(
+              raceData[0],
+              raceData[0],
+              1,
+              0,
+              holdDelayCentiseconds,
+              isFirstGifFrame
+            );
+            isFirstGifFrame = false;
+          }
 
           for (
             let periodIndex = 0;

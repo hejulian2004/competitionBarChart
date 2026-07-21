@@ -612,7 +612,7 @@
           if (checkbox && enabled) checkbox.checked = true;
         }
 
-        const activeFrame = toFrame && (Number(linearProgress) || 0) > 0
+        const activeFrame = (toFrame && (Number(linearProgress) || 0) >= 1)
           ? toFrame
           : fromFrame;
         drawDate(context, outputWidth, outputHeight, activeFrame?.time);
