@@ -1405,6 +1405,47 @@
       updateDanmakuFormState();
     }
 
+    function updateVideoCoverSelect() {
+      const select = document.querySelector("#videoCoverFrameInput");
+      if (!select) return;
+
+      const currentValue = select.value || "last";
+      select.replaceChildren();
+
+      const optionLast = document.createElement("option");
+      optionLast.value = "last";
+      const lastTimeStr = raceData.length > 0 ? `（最终结果：${raceData[raceData.length - 1].time}）` : "";
+      optionLast.textContent = `最后一帧${lastTimeStr}`;
+      select.appendChild(optionLast);
+
+      const optionFirst = document.createElement("option");
+      optionFirst.value = "first";
+      const firstTimeStr = raceData.length > 0 ? `（初始状态：${raceData[0].time}）` : "";
+      optionFirst.textContent = `第一帧${firstTimeStr}`;
+      select.appendChild(optionFirst);
+
+      if (raceData && raceData.length > 0) {
+        const optgroup = document.createElement("optgroup");
+        optgroup.label = "—— 指定具体时间节点 ——";
+
+        raceData.forEach(frame => {
+          const opt = document.createElement("option");
+          opt.value = `node:${frame.time}`;
+          opt.textContent = `时间节点：${frame.time}`;
+          optgroup.appendChild(opt);
+        });
+
+        select.appendChild(optgroup);
+      }
+
+      const matched = Array.from(select.options).some(opt => opt.value === currentValue);
+      if (matched) {
+        select.value = currentValue;
+      } else {
+        select.value = "last";
+      }
+    }
+
     function updateDanmakuFormState() {
       const timeSelect = document.querySelector("#danmakuTimeSelect");
       const addBtn = document.querySelector("#addDanmakuButton");
@@ -4481,6 +4522,7 @@
         refreshColorScale();
         renderColorControls();
         updateDanmakuTimeSelect();
+        updateVideoCoverSelect();
         renderDanmakuList();
         syncProgress(0);
         renderFrame(raceData[0], false);
@@ -4500,6 +4542,7 @@
       updatePreviewTable();
       renderColorControls();
       updateDanmakuTimeSelect();
+      updateVideoCoverSelect();
       renderDanmakuList();
       syncProgress(0);
       renderFrame(raceData[0], false);
@@ -6297,13 +6340,22 @@
           }
         };
 
-        const coverMode = document.querySelector("#videoCoverFrameInput")?.value || "last";
+        const coverValue = document.querySelector("#videoCoverFrameInput")?.value || "last";
+        let coverFrame = null;
 
-        if (coverMode === "last" && raceData.length > 0) {
-          const lastFrame = raceData[raceData.length - 1];
+        if (coverValue === "last" && raceData.length > 0) {
+          coverFrame = raceData[raceData.length - 1];
+        } else if (coverValue === "first" && raceData.length > 0) {
+          coverFrame = raceData[0];
+        } else if (coverValue.startsWith("node:") && raceData.length > 0) {
+          const targetTime = coverValue.replace("node:", "");
+          coverFrame = raceData.find(f => String(f.time) === targetTime) || raceData[raceData.length - 1];
+        }
+
+        if (coverFrame) {
           await encodeCanvasFrame(
-            lastFrame,
-            lastFrame,
+            coverFrame,
+            coverFrame,
             1,
             1,
             true
