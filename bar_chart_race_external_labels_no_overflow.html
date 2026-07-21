@@ -8824,14 +8824,18 @@
 
       function drawDate(context, outputWidth, outputHeight, text) {
         if (!text) return;
+        const opacity = typeof getDateOpacity === "function" ? getDateOpacity() : 0.20;
+        if (opacity <= 0.001) return;
+
+        const color = typeof getDateColor === "function" ? getDateColor() : "#2563eb";
         const logical = getDateLayout(text);
         const scale = Math.min(outputWidth / WIDTH, outputHeight / HEIGHT);
         const offsetX = (outputWidth - WIDTH * scale) / 2;
         const offsetY = (outputHeight - HEIGHT * scale) / 2;
         context.save();
         context.setTransform(1, 0, 0, 1, 0, 0);
-        context.globalAlpha = 0.20;
-        context.fillStyle = "#2563eb";
+        context.globalAlpha = opacity;
+        context.fillStyle = color;
         context.font =
           `900 ${Math.max(18, Math.round(logical.fontSize * scale))}px ` +
           '"Microsoft YaHei","PingFang SC",Arial,sans-serif';
