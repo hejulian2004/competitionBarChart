@@ -2127,8 +2127,6 @@
       const captureArea = document.querySelector("#captureArea");
       if (captureArea) {
         captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
-        captureArea.style.height = "auto";
-        captureArea.style.minHeight = "0";
 
         if (document.fullscreenElement === captureArea) {
           captureArea.style.width = "100%";
@@ -4372,9 +4370,14 @@
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
 
+      const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+      const liftRatio = { "16:9": 0, "3:4": 0.065, "4:5": 0.030, "9:16": 0.020 }[aspectMode] || 0;
+      const lift = Math.round(logicalHeight * liftRatio);
+      
       const yTargetRange = getYScaleTargetRange(ranking.length);
       const targetHeight = yTargetRange[1] - yTargetRange[0];
-      const cardHeight = Math.min(logicalHeight - margin.top - margin.bottom + 60, targetHeight + 78);
+      const fullHeight = logicalHeight - margin.top - margin.bottom + 60 - lift;
+      const cardHeight = fullHeight;
 
       // 独立图表画布面板
       context.save();
