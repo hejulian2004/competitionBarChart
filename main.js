@@ -262,9 +262,19 @@
         }
       }
 
-      getYScaleTargetRange = function integratedYRange() {
-        const panel = getPanelBounds();
-        return [margin.top, Math.max(margin.top + 1, panel.bottom - 18)];
+      getYScaleTargetRange = function integratedYRange(barCount) {
+        const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
+        const capacity = typeof getMaxCapacityBarCount === "function"
+          ? getMaxCapacityBarCount()
+          : (barCount || categories.length || 8);
+        const count = Math.max(1, capacity);
+        const maxBarHeight = typeof getMaxBarHeightSetting === "function"
+          ? getMaxBarHeightSetting()
+          : 52;
+        const maxStep = maxBarHeight / 0.84;
+        const neededHeight = count * maxStep;
+        const targetHeight = Math.min(fullAvailableHeight, neededHeight);
+        return [margin.top, margin.top + targetHeight];
       };
 
       updateResponsiveChartMargins = function integratedMargins() {

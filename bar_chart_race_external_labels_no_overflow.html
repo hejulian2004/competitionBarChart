@@ -881,6 +881,14 @@
         </div>
 
         <div class="field">
+          <label for="maxBarHeightInput">
+            柱体高度上限（粗细）
+            <span id="maxBarHeightValue" class="range-value">52px</span>
+          </label>
+          <input id="maxBarHeightInput" type="range" min="24" max="84" step="2" value="52" />
+        </div>
+
+        <div class="field">
           <label for="showZeroInput">0 值主体</label>
           <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
             <input id="showZeroInput" type="checkbox" checked />
@@ -3417,11 +3425,31 @@
       return Math.max(1, totalCats);
     }
 
+    function getMaxBarHeightSetting() {
+      const el = document.querySelector("#maxBarHeightInput");
+      const raw = el ? Number(el.value) : 52;
+      return Number.isFinite(raw) && raw >= 24 && raw <= 84 ? raw : 52;
+    }
+
+    function updateMaxBarHeight() {
+      const val = getMaxBarHeightSetting();
+      const label = document.querySelector("#maxBarHeightValue");
+      if (label) {
+        label.textContent = `${val}px`;
+      }
+      if (raceData && raceData.length > 0) {
+        updateResponsiveChartMargins();
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+      saveAppState();
+    }
+
     function getYScaleTargetRange(barCount) {
       const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
       const capacity = getMaxCapacityBarCount();
       const count = Math.max(1, capacity);
-      const maxStep = MAX_BAR_HEIGHT / 0.84;
+      const maxBarHeight = getMaxBarHeightSetting();
+      const maxStep = maxBarHeight / 0.84;
       const neededHeight = count * maxStep;
       const targetHeight = Math.min(fullAvailableHeight, neededHeight);
       return [margin.top, margin.top + targetHeight];
@@ -7496,8 +7524,11 @@
       });
     }
 
+    document.querySelector("#maxBarHeightInput")
+      ?.addEventListener("input", updateMaxBarHeight);
+
     const autoSaveInputIds = [
-      "titleInput", "subtitleInput", "barsInput", "showZeroInput",
+      "titleInput", "subtitleInput", "barsInput", "maxBarHeightInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
@@ -8645,9 +8676,19 @@
         }
       }
 
-      getYScaleTargetRange = function integratedYRange() {
-        const panel = getPanelBounds();
-        return [margin.top, Math.max(margin.top + 1, panel.bottom - 18)];
+      getYScaleTargetRange = function integratedYRange(barCount) {
+        const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
+        const capacity = typeof getMaxCapacityBarCount === "function"
+          ? getMaxCapacityBarCount()
+          : (barCount || categories.length || 8);
+        const count = Math.max(1, capacity);
+        const maxBarHeight = typeof getMaxBarHeightSetting === "function"
+          ? getMaxBarHeightSetting()
+          : 52;
+        const maxStep = maxBarHeight / 0.84;
+        const neededHeight = count * maxStep;
+        const targetHeight = Math.min(fullAvailableHeight, neededHeight);
+        return [margin.top, margin.top + targetHeight];
       };
 
       updateResponsiveChartMargins = function integratedMargins() {

@@ -2258,11 +2258,31 @@
       return Math.max(1, totalCats);
     }
 
+    function getMaxBarHeightSetting() {
+      const el = document.querySelector("#maxBarHeightInput");
+      const raw = el ? Number(el.value) : 52;
+      return Number.isFinite(raw) && raw >= 24 && raw <= 84 ? raw : 52;
+    }
+
+    function updateMaxBarHeight() {
+      const val = getMaxBarHeightSetting();
+      const label = document.querySelector("#maxBarHeightValue");
+      if (label) {
+        label.textContent = `${val}px`;
+      }
+      if (raceData && raceData.length > 0) {
+        updateResponsiveChartMargins();
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+      saveAppState();
+    }
+
     function getYScaleTargetRange(barCount) {
       const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
       const capacity = getMaxCapacityBarCount();
       const count = Math.max(1, capacity);
-      const maxStep = MAX_BAR_HEIGHT / 0.84;
+      const maxBarHeight = getMaxBarHeightSetting();
+      const maxStep = maxBarHeight / 0.84;
       const neededHeight = count * maxStep;
       const targetHeight = Math.min(fullAvailableHeight, neededHeight);
       return [margin.top, margin.top + targetHeight];
@@ -6337,8 +6357,11 @@
       });
     }
 
+    document.querySelector("#maxBarHeightInput")
+      ?.addEventListener("input", updateMaxBarHeight);
+
     const autoSaveInputIds = [
-      "titleInput", "subtitleInput", "barsInput", "showZeroInput",
+      "titleInput", "subtitleInput", "barsInput", "maxBarHeightInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
