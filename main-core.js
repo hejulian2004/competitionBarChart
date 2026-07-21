@@ -2127,6 +2127,9 @@
       const captureArea = document.querySelector("#captureArea");
       if (captureArea) {
         captureArea.style.aspectRatio = `${WIDTH} / ${HEIGHT}`;
+        captureArea.style.height = "auto";
+        captureArea.style.minHeight = "0";
+
         if (document.fullscreenElement === captureArea) {
           captureArea.style.width = "100%";
           captureArea.style.height = "100%";

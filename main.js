@@ -191,18 +191,24 @@
           "4:5": 0.030,
           "9:16": 0.020
         }[getAspectMode()] || 0;
+        const lift = Math.round(HEIGHT * liftRatio);
+        
         const top = margin.top - 42;
-        const bottom = Math.max(
-          top + 180,
-          HEIGHT - margin.bottom + 18 - Math.round(HEIGHT * liftRatio)
-        );
+        const barCapacity = typeof getMaxCapacityBarCount === "function" ? getMaxCapacityBarCount() : categories.length;
+        const yTargetRange = getYScaleTargetRange(barCapacity);
+        const targetHeight = yTargetRange[1] - yTargetRange[0];
+        
+        const fullHeight = HEIGHT - margin.top - margin.bottom + 60 - lift;
+        const cardHeight = Math.min(fullHeight, targetHeight + 60);
+        const bottom = top + cardHeight;
+        
         return {
           left: CHART_SIDE_PADDING,
           right: WIDTH - CHART_SIDE_PADDING,
           top,
           bottom,
           width: WIDTH - CHART_SIDE_PADDING * 2,
-          height: bottom - top
+          height: Math.max(1, bottom - top)
         };
       }
 
@@ -263,7 +269,15 @@
       }
 
       getYScaleTargetRange = function integratedYRange(barCount) {
-        const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
+        const liftRatio = {
+          "16:9": 0,
+          "3:4": 0.065,
+          "4:5": 0.030,
+          "9:16": 0.020
+        }[getAspectMode()] || 0;
+        const lift = Math.round(HEIGHT * liftRatio);
+        const fullAvailableHeight = HEIGHT - margin.top - margin.bottom - lift;
+        
         const capacity = typeof getMaxCapacityBarCount === "function"
           ? getMaxCapacityBarCount()
           : (barCount || categories.length || 8);
@@ -273,7 +287,7 @@
           : 52;
         const maxStep = maxBarHeight / 0.84;
         const neededHeight = count * maxStep;
-        const targetHeight = Math.min(fullAvailableHeight, neededHeight);
+        const targetHeight = Math.min(Math.max(0, fullAvailableHeight), neededHeight);
         return [margin.top, margin.top + targetHeight];
       };
 
