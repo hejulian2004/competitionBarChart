@@ -2819,7 +2819,7 @@
       titleLabel.text(titleText);
       subtitleLabel.text(subtitleText);
       titleAccent.style("display", titleText ? null : "none");
-      timeLabel.text(frame.time);
+      titleAccent.style("display", titleText ? null : "none");
 
       const dataFrameIndex = raceData.indexOf(frame);
       if (dataFrameIndex >= 0) {
@@ -2842,6 +2842,17 @@
       const numberTransition = svg.transition("numbers")
         .duration(duration)
         .ease(d3.easeLinear);
+        
+      timeLabel
+        .transition(numberTransition)
+        .tween("text", function() {
+          const oldTime = this.textContent || frame.time;
+          const targetTime = frame.time;
+          return t => {
+            // 动画完全结束前，保持旧时间节点，从而保证每个时间节点都有平等的展示时间（包括第一个节点）
+            this.textContent = t >= 1 ? targetTime : oldTime;
+          };
+        });
 
       const axisLayout = getAxisTickLayout();
 
@@ -3377,18 +3388,19 @@
 
     const STORAGE_KEY = "bar_chart_race_saved_state";
 
+    const configInputIds = [
+      "titleInput", "subtitleInput", "barsInput", "maxBarHeightInput", "showZeroInput",
+      "aspectRatioModeInput", "chartWidthScaleInput", "enableGradientInput", "showXAxisInput",
+      "xAxisModeInput", "valueScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
+      "exportFilenameInput", "videoFormatInput", "videoFpsInput", "videoResolutionInput",
+      "videoCoverFrameInput", "valueStepInput", "unitInput", "dateOpacityInput",
+      "dateColorInput", "dateColorCodeInput", "showDanmakuInput"
+    ];
+
     function saveAppState() {
       try {
-        const inputIds = [
-          "titleInput", "subtitleInput", "barsInput", "showZeroInput",
-          "enableGradientInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
-          "speedInput", "gifFpsInput", "gifCompatibilityInput",
-          "videoFormatInput", "videoFpsInput", "videoResolutionInput",
-          "valueStepInput", "unitInput"
-        ];
-
         const inputsState = {};
-        inputIds.forEach(id => {
+        configInputIds.forEach(id => {
           const el = document.querySelector(`#${id}`);
           if (el) {
             inputsState[id] = el.type === "checkbox" ? el.checked : el.value;
@@ -3441,6 +3453,9 @@
               } else {
                 el.value = val;
               }
+              // 触发 input 和 change 事件，以同步各个联动组件的状态（如数值显示、渲染等）
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
             }
           });
         }
@@ -3970,8 +3985,13 @@
         })
       );
 
+      let displayTime = fromFrame.time;
+      if (toFrame && linearRatio >= 1) {
+        displayTime = toFrame.time;
+      }
+
       return {
-        time: (toFrame && linearRatio > 0) ? toFrame.time : fromFrame.time,
+        time: displayTime,
         values,
         labelValues,
         axisState: interpolateAxisState(
@@ -4520,10 +4540,21 @@
         context.globalAlpha = 1;
       }
 
-      const yBand = d3.scaleBand()
-        .domain(ranking.map(d => d.name))
-        .range(getYScaleTargetRange(ranking.length))
+      const fromRanking = getRanking(fromFrame);
+      const toRanking = getRanking(toFrame);
+      
+      const fromYBand = d3.scaleBand()
+        .domain(fromRanking.map(d => d.name))
+        .range(getYScaleTargetRange(fromRanking.length))
         .padding(0.16);
+
+      const toYBand = d3.scaleBand()
+        .domain(toRanking.map(d => d.name))
+        .range(getYScaleTargetRange(toRanking.length))
+        .padding(0.16);
+
+      const step = d3.interpolateNumber(fromYBand.step(), toYBand.step())(easedProgress);
+      const bandwidth = d3.interpolateNumber(fromYBand.bandwidth(), toYBand.bandwidth())(easedProgress);
 
       const fromRanks = getAllRankMap(fromFrame);
       const toRanks = getAllRankMap(toFrame);
@@ -4541,30 +4572,27 @@
         )(easedProgress);
       };
 
-      const barCount = ranking.length;
+      const maxBarCount = Math.max(fromRanking.length, toRanking.length);
       const nameFontSize =
-        barCount <= 10
+        maxBarCount <= 10
           ? 20
-          : barCount <= 20
+          : maxBarCount <= 20
             ? 16
             : 12;
 
       const valueFontSize =
-        barCount <= 10
+        maxBarCount <= 10
           ? 22
-          : barCount <= 20
+          : maxBarCount <= 20
             ? 17
             : 13;
 
       const rankFontSize =
-        barCount <= 10
+        maxBarCount <= 10
           ? 15
-          : barCount <= 20
+          : maxBarCount <= 20
             ? 12
             : 10;
-
-      const step = yBand.step();
-      const bandwidth = yBand.bandwidth();
 
       ranking.forEach((item, itemIndex) => {
         const y =
@@ -5366,9 +5394,10 @@
           { type: mimeType }
         );
 
+        const baseName = document.querySelector("#exportFilenameInput")?.value?.trim() || "bar-chart-race";
         downloadBlob(
           videoBlob,
-          `bar-chart-race-canvas-${fps}fps.${extension}`
+          `${baseName}-${fps}fps.${extension}`
         );
 
         setStatus(
@@ -6015,9 +6044,10 @@
           { type: "image/gif" }
         );
 
+        const baseName = document.querySelector("#exportFilenameInput")?.value?.trim() || "bar-chart-race";
         downloadBlob(
           gifBlob,
-          `bar-chart-race-canvas-${requestedGifFps}fps.gif`
+          `${baseName}-${requestedGifFps}fps.gif`
         );
 
         const totalDurationSeconds =
@@ -6126,9 +6156,10 @@
         const time =
           raceData[currentFrameIndex]?.time || "frame";
 
+        const baseName = document.querySelector("#exportFilenameInput")?.value?.trim() || "bar-chart-race";
         downloadBlob(
           blob,
-          `bar-chart-race-${time}.png`
+          `${baseName}-${time}.png`
         );
 
         setStatus(
@@ -6369,15 +6400,7 @@
     document.querySelector("#maxBarHeightInput")
       ?.addEventListener("input", updateMaxBarHeight);
 
-    const autoSaveInputIds = [
-      "titleInput", "subtitleInput", "barsInput", "maxBarHeightInput", "showZeroInput",
-      "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
-      "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
-      "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
-      "valueStepInput", "unitInput"
-    ];
-
-    autoSaveInputIds.forEach(id => {
+    configInputIds.forEach(id => {
       const el = document.querySelector(`#${id}`);
       if (el) {
         const handler = () => {
