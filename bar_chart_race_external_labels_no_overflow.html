@@ -3445,13 +3445,11 @@
     }
 
     function getYScaleTargetRange(barCount) {
-      const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
-      const capacity = getMaxCapacityBarCount();
-      const count = Math.max(1, capacity);
-      const maxBarHeight = getMaxBarHeightSetting();
-      const maxStep = maxBarHeight / 0.84;
-      const neededHeight = count * maxStep;
-      const targetHeight = Math.min(fullAvailableHeight, neededHeight);
+      const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+      const liftRatio = { "16:9": 0, "3:4": 0.065, "4:5": 0.030, "9:16": 0.020 }[aspectMode] || 0;
+      const lift = Math.round(HEIGHT * liftRatio);
+      const fullAvailableHeight = HEIGHT - margin.top - margin.bottom - lift;
+      const targetHeight = Math.max(0, fullAvailableHeight);
       return [margin.top, margin.top + targetHeight];
     }
 
@@ -4049,7 +4047,11 @@
         zeroLine.style("display", "none");
       }
 
-      const bottomY = HEIGHT - margin.bottom + 20;
+      const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+      const liftRatio = { "16:9": 0, "3:4": 0.065, "4:5": 0.030, "9:16": 0.020 }[aspectMode] || 0;
+      const lift = Math.round(HEIGHT * liftRatio);
+      
+      const bottomY = HEIGHT - margin.bottom - lift + 20;
 
       const rowTracks = chartGroup
         .selectAll("rect.row-track")
@@ -5536,9 +5538,14 @@
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
 
+      const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+      const liftRatio = { "16:9": 0, "3:4": 0.065, "4:5": 0.030, "9:16": 0.020 }[aspectMode] || 0;
+      const lift = Math.round(logicalHeight * liftRatio);
+      
       const yTargetRange = getYScaleTargetRange(ranking.length);
       const targetHeight = yTargetRange[1] - yTargetRange[0];
-      const cardHeight = Math.min(logicalHeight - margin.top - margin.bottom + 60, targetHeight + 78);
+      const fullHeight = logicalHeight - margin.top - margin.bottom + 60 - lift;
+      const cardHeight = fullHeight;
 
       // 独立图表画布面板
       context.save();
@@ -5734,7 +5741,7 @@
         if (
           centerY < margin.top - bandwidth ||
           centerY >
-            logicalHeight - margin.bottom + bandwidth
+            logicalHeight - margin.bottom - lift + bandwidth
         ) {
           return;
         }
@@ -8605,18 +8612,19 @@
           "4:5": 0.030,
           "9:16": 0.020
         }[getAspectMode()] || 0;
+        const lift = Math.round(HEIGHT * liftRatio);
+        
         const top = margin.top - 42;
-        const bottom = Math.max(
-          top + 180,
-          HEIGHT - margin.bottom + 18 - Math.round(HEIGHT * liftRatio)
-        );
+        const fullHeight = HEIGHT - margin.top - margin.bottom + 60 - lift;
+        const cardHeight = fullHeight;
+        const bottom = top + cardHeight;
         return {
           left: CHART_SIDE_PADDING,
           right: WIDTH - CHART_SIDE_PADDING,
           top,
           bottom,
           width: WIDTH - CHART_SIDE_PADDING * 2,
-          height: bottom - top
+          height: cardHeight
         };
       }
 
@@ -8677,17 +8685,11 @@
       }
 
       getYScaleTargetRange = function integratedYRange(barCount) {
-        const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
-        const capacity = typeof getMaxCapacityBarCount === "function"
-          ? getMaxCapacityBarCount()
-          : (barCount || categories.length || 8);
-        const count = Math.max(1, capacity);
-        const maxBarHeight = typeof getMaxBarHeightSetting === "function"
-          ? getMaxBarHeightSetting()
-          : 52;
-        const maxStep = maxBarHeight / 0.84;
-        const neededHeight = count * maxStep;
-        const targetHeight = Math.min(fullAvailableHeight, neededHeight);
+        const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+        const liftRatio = { "16:9": 0, "3:4": 0.065, "4:5": 0.030, "9:16": 0.020 }[aspectMode] || 0;
+        const lift = Math.round(HEIGHT * liftRatio);
+        const fullAvailableHeight = HEIGHT - margin.top - margin.bottom - lift;
+        const targetHeight = Math.max(0, fullAvailableHeight);
         return [margin.top, margin.top + targetHeight];
       };
 

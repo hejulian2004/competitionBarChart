@@ -2883,7 +2883,11 @@
         zeroLine.style("display", "none");
       }
 
-      const bottomY = HEIGHT - margin.bottom + 20;
+      const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
+      const liftRatio = { "16:9": 0, "3:4": 0.065, "4:5": 0.030, "9:16": 0.020 }[aspectMode] || 0;
+      const lift = Math.round(HEIGHT * liftRatio);
+      
+      const bottomY = HEIGHT - margin.bottom - lift + 20;
 
       const rowTracks = chartGroup
         .selectAll("rect.row-track")
@@ -4573,7 +4577,7 @@
         if (
           centerY < margin.top - bandwidth ||
           centerY >
-            logicalHeight - margin.bottom + bandwidth
+            logicalHeight - margin.bottom - lift + bandwidth
         ) {
           return;
         }
