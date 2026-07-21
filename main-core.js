@@ -2847,8 +2847,38 @@
         .duration(duration)
         .ease(d3.easeLinear);
         
-      timeLabel.interrupt().text(frame.time);
-      renderDanmakuDOM(danmakuGroup, frame.time, danmakuMap.get(getDanmakuKey(frame.time)));
+      if (!animate) {
+        timeLabel.interrupt().text(frame.time);
+        renderDanmakuDOM(danmakuGroup, frame.time, danmakuMap.get(getDanmakuKey(frame.time)));
+      } else {
+        const oldTime = dataFrameIndex > 0 ? raceData[dataFrameIndex - 1].time : frame.time;
+        const targetTime = frame.time;
+
+        timeLabel
+          .transition(numberTransition)
+          .tween("text", function() {
+            return t => {
+              this.textContent = t >= 1 ? targetTime : oldTime;
+            };
+          });
+
+        let currentRenderedTime = null;
+        danmakuGroup
+          .transition(numberTransition)
+          .tween("danmaku", function() {
+            return function(t) {
+              const activeTime = t >= 1 ? targetTime : oldTime;
+              if (currentRenderedTime !== activeTime) {
+                currentRenderedTime = activeTime;
+                renderDanmakuDOM(
+                  danmakuGroup,
+                  activeTime,
+                  danmakuMap.get(getDanmakuKey(activeTime))
+                );
+              }
+            };
+          });
+      }
 
       const axisLayout = getAxisTickLayout();
 
@@ -3569,12 +3599,6 @@
       isPlaying = true;
       const token = ++playToken;
 
-      if (currentFrameIndex === 0) {
-        renderFrame(raceData[0], 0, false);
-        await sleep(getFrameDuration());
-        if (!isPlaying || token !== playToken) return;
-      }
-
       while (isPlaying && token === playToken && currentFrameIndex < raceData.length - 1) {
         currentFrameIndex += 1;
         renderFrame(raceData[currentFrameIndex], currentFrameIndex, true);
@@ -4034,7 +4058,10 @@
         })
       );
 
-      let displayTime = (toFrame && linearRatio > 0) ? toFrame.time : fromFrame.time;
+      let displayTime = fromFrame.time;
+      if (toFrame && linearRatio >= 1) {
+        displayTime = toFrame.time;
+      }
 
       return {
         time: displayTime,
@@ -4925,16 +4952,14 @@
       const effectiveFps =
         framesPerPeriod / periodSeconds;
 
-      const totalPeriods = raceData.length > 0 ? (1 + intervalCount) : 0;
-
       const totalFrames =
-        totalPeriods > 0
-          ? totalPeriods * framesPerPeriod
+        intervalCount > 0
+          ? intervalCount * framesPerPeriod
           : 1;
 
       const durationSeconds =
-        totalPeriods > 0
-          ? totalPeriods * periodSeconds
+        intervalCount > 0
+          ? intervalCount * periodSeconds
           : periodSeconds;
 
       const bitrate = getVideoBitrate(
@@ -5388,7 +5413,7 @@
             raceData[0],
             raceData[0],
             1,
-            0,
+            1,
             true
           );
         } else {
@@ -5397,19 +5422,6 @@
             Math.round(effectiveFps * 2)
           );
 
-          // 1. Encode initial static period for node 0 (raceData[0]) so node 0 gets full display duration
-          for (let frameIndex = 0; frameIndex < framesPerPeriod; frameIndex++) {
-            checkCancelled();
-            await encodeCanvasFrame(
-              raceData[0],
-              raceData[0],
-              1,
-              0,
-              frameNumber % keyFrameInterval === 0
-            );
-          }
-
-          // 2. Encode transition periods
           for (
             let periodIndex = 0;
             periodIndex < intervalCount;
@@ -5860,11 +5872,10 @@
           maximumRequiredSteps >
           availableMotionFrames;
 
-        const totalPeriods = raceData.length > 0 ? (1 + intervalCount) : 0;
         const totalCentiseconds =
           Math.max(
             1,
-            (totalPeriods || 1) *
+            (intervalCount || 1) *
             exactPeriodCentiseconds
           );
 
@@ -5994,33 +6005,13 @@
             raceData[0],
             raceData[0],
             1,
-            0,
+            1,
             exactPeriodCentiseconds,
             true
           );
         } else {
           let isFirstGifFrame = true;
 
-          // 1. Encode initial static period for node 0
-          for (let frameIndex = 0; frameIndex < framesPerPeriod; frameIndex++) {
-            checkCancelled();
-            const delayCentiseconds = Math.max(
-              minimumDelayCentiseconds,
-              Math.round(exactPeriodCentiseconds / framesPerPeriod)
-            );
-
-            await encodeCanvasFrame(
-              raceData[0],
-              raceData[0],
-              1,
-              0,
-              delayCentiseconds,
-              isFirstGifFrame
-            );
-            isFirstGifFrame = false;
-          }
-
-          // 2. Encode transition periods
           for (
             let periodIndex = 0;
             periodIndex < intervalCount;
