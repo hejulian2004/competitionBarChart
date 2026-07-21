@@ -21,7 +21,7 @@
     };
 
     loadClassicScript("main-layout-base.js", () => {
-      const MAX_LINES = 4;
+      const MAX_LINES = 3;
       const CACHE_LIMIT = 96;
       const FADE_START = 0.70;
       const FADE_END = 0.94;
@@ -84,6 +84,27 @@
         return lines.slice(0, maximumLines);
       }
 
+      function getDanmakuTextLines(text, metrics, maxLines = 3) {
+        const rawText = String(text ?? "").trim();
+        if (!rawText) return [];
+
+        if (rawText.includes("\n")) {
+          const parts = rawText.split("\n");
+          while (parts.length > 0 && parts[parts.length - 1].trim() === "") {
+            parts.pop();
+          }
+          const lines = parts.slice(0, maxLines).map(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return "";
+            const wrapped = wrapText(trimmed, metrics.textWidth, metrics.textFontSize, 1);
+            return wrapped[0] || trimmed;
+          });
+          return lines;
+        }
+
+        return wrapText(rawText, metrics.textWidth, metrics.textFontSize, maxLines);
+      }
+
       function getBaseMetrics() {
         const isPortrait = WIDTH < HEIGHT;
         const scale = isPortrait ? Math.max(1.05, Math.min(1.35, HEIGHT / 960)) : getUiScale();
@@ -111,12 +132,10 @@
       function getReservedLineCount(metrics = getBaseMetrics()) {
         let count = 1;
         danmakuMap.forEach(text => {
-          count = Math.max(
-            count,
-            wrapText(text, metrics.textWidth, metrics.textFontSize, 4).length || 1
-          );
+          const lines = getDanmakuTextLines(text, metrics, 3);
+          count = Math.max(count, lines.length || 1);
         });
-        return Math.min(MAX_LINES, count);
+        return Math.min(3, count);
       }
 
       function getDanmakuLayout(key = "", text = "") {
@@ -134,10 +153,9 @@
           lineCount * metrics.lineHeight +
           metrics.padding;
         const cardY = headerBottom + Math.max(10, Math.round(12 * metrics.scale));
-        const textLines = wrapText(
+        const textLines = getDanmakuTextLines(
           text,
-          metrics.textWidth,
-          metrics.textFontSize,
+          metrics,
           lineCount
         );
 

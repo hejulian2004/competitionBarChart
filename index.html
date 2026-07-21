@@ -190,17 +190,32 @@
 
       <div class="color-settings" style="margin-top: 14px;">
         <div class="color-settings-header">
-          <div class="color-settings-title">时间节点解说弹幕（在特定时间点浮现字幕卡片）</div>
+          <div class="color-settings-title">时间节点解说弹幕（支持自定义 1～3 行字幕内容）</div>
           <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
             <input id="showDanmakuInput" type="checkbox" checked />
             启用解说/弹幕显示
           </label>
         </div>
-        <div style="display:grid;grid-template-columns: 150px 1fr auto;gap: 10px;align-items: center;margin-bottom: 10px;">
-          <select id="danmakuTimeSelect"></select>
-          <input id="danmakuTextInput" type="text" placeholder="输入要在该时间点显示的解说文字，如：Python 首次登顶！" />
-          <button id="addDanmakuButton" class="primary" type="button" style="padding: 9px 16px;">添加解说</button>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <label for="danmakuTimeSelect" style="font-size: 13px; font-weight: 700; color: #334155; min-width: 65px;">时间节点:</label>
+            <select id="danmakuTimeSelect" style="flex: 1; height: 34px; border-radius: 6px; border: 1px solid #cbd5e1;"></select>
+            <button id="addDanmakuButton" class="primary" type="button" style="padding: 7px 16px; white-space: nowrap;">保存解说</button>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 55px 1fr; gap: 6px 10px; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 1 行:</span>
+            <input id="danmakuLine1Input" type="text" placeholder="第 1 行字幕内容（例如：Python 首次登顶！）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+
+            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 2 行:</span>
+            <input id="danmakuLine2Input" type="text" placeholder="第 2 行字幕内容（可选，例如：全网讨论热度翻倍）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+
+            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 3 行:</span>
+            <input id="danmakuLine3Input" type="text" placeholder="第 3 行字幕内容（可选，例如：大模型应用全面爆发）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+          </div>
         </div>
+
         <div id="danmakuList" class="danmaku-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:140px;overflow-y:auto;"></div>
       </div>
 

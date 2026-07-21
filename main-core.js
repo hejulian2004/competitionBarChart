@@ -205,10 +205,6 @@
         label.textContent = `${Math.round(opacity * 100)}%`;
       }
       timeLabel.style("opacity", opacity);
-      if (raceData && raceData.length > 0) {
-        renderFrame(raceData[currentFrameIndex], false);
-      }
-      saveAppState();
     }
 
     function updateDateColor(colorHex) {
@@ -224,10 +220,6 @@
       }
 
       timeLabel.style("fill", validHex);
-      if (raceData && raceData.length > 0) {
-        renderFrame(raceData[currentFrameIndex], false);
-      }
-      saveAppState();
     }
 
     function isDanmakuEnabled() {
@@ -305,30 +297,56 @@
     function updateDanmakuFormState() {
       const timeSelect = document.querySelector("#danmakuTimeSelect");
       const addBtn = document.querySelector("#addDanmakuButton");
-      const textInput = document.querySelector("#danmakuTextInput");
+      const line1El = document.querySelector("#danmakuLine1Input");
+      const line2El = document.querySelector("#danmakuLine2Input");
+      const line3El = document.querySelector("#danmakuLine3Input");
       if (!timeSelect || !addBtn) return;
 
-      const currentTime = getDanmakuKey(timeSelect.value);
-      if (danmakuMap.has(currentTime)) {
+      const key = getDanmakuKey(timeSelect.value);
+      if (danmakuMap.has(key)) {
         addBtn.textContent = "更新解说";
         addBtn.classList.add("primary");
+        const fullText = danmakuMap.get(key) || "";
+        const lines = fullText.split("\n");
+        if (line1El && document.activeElement !== line1El && document.activeElement !== line2El && document.activeElement !== line3El) {
+          line1El.value = lines[0] || "";
+          if (line2El) line2El.value = lines[1] || "";
+          if (line3El) line3El.value = lines[2] || "";
+        }
       } else {
-        addBtn.textContent = "添加解说";
+        addBtn.textContent = "保存解说";
         addBtn.classList.remove("primary");
+        if (line1El && document.activeElement !== line1El && document.activeElement !== line2El && document.activeElement !== line3El) {
+          line1El.value = "";
+          if (line2El) line2El.value = "";
+          if (line3El) line3El.value = "";
+        }
       }
     }
 
     function editDanmaku(time) {
       const timeSelect = document.querySelector("#danmakuTimeSelect");
-      const textInput = document.querySelector("#danmakuTextInput");
-      if (!timeSelect || !textInput) return;
+      const line1El = document.querySelector("#danmakuLine1Input");
+      const line2El = document.querySelector("#danmakuLine2Input");
+      const line3El = document.querySelector("#danmakuLine3Input");
+      if (!timeSelect) return;
 
       const key = getDanmakuKey(time);
       timeSelect.value = key;
+
       if (danmakuMap.has(key)) {
-        textInput.value = danmakuMap.get(key);
+        const fullText = danmakuMap.get(key) || "";
+        const lines = fullText.split("\n");
+        if (line1El) line1El.value = lines[0] || "";
+        if (line2El) line2El.value = lines[1] || "";
+        if (line3El) line3El.value = lines[2] || "";
+      } else {
+        if (line1El) line1El.value = "";
+        if (line2El) line2El.value = "";
+        if (line3El) line3El.value = "";
       }
-      textInput.focus();
+
+      if (line1El) line1El.focus();
       updateDanmakuFormState();
       setStatus(`已将【${key}】的解说内容载入输入框，修改后点击“更新解说”即可保存。`);
     }
@@ -359,7 +377,12 @@
 
         const textSpan = document.createElement("span");
         textSpan.className = "danmaku-text";
-        textSpan.textContent = text;
+        const lines = String(text ?? "").split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length > 1) {
+          textSpan.textContent = `${lines[0]} [共 ${lines.length} 行]`;
+        } else {
+          textSpan.textContent = lines[0] || text;
+        }
 
         const editBtn = document.createElement("button");
         editBtn.className = "danmaku-edit";
@@ -390,24 +413,34 @@
 
     function addDanmaku() {
       const timeSelect = document.querySelector("#danmakuTimeSelect");
-      const textInput = document.querySelector("#danmakuTextInput");
-      if (!timeSelect || !textInput) return;
+      const line1El = document.querySelector("#danmakuLine1Input");
+      const line2El = document.querySelector("#danmakuLine2Input");
+      const line3El = document.querySelector("#danmakuLine3Input");
+      if (!timeSelect) return;
 
       const key = getDanmakuKey(timeSelect.value);
-      const text = textInput.value.trim();
-      if (!key || !text) {
-        setStatus("请选择时间节点并输入解说文字！", true);
+      const l1 = line1El ? line1El.value.trim() : "";
+      const l2 = line2El ? line2El.value.trim() : "";
+      const l3 = line3El ? line3El.value.trim() : "";
+
+      if (!key || (!l1 && !l2 && !l3)) {
+        setStatus("请选择时间节点并至少输入一行解说文字！", true);
         return;
       }
 
+      const combinedText = [l1, l2, l3].join("\n").replace(/\n+$/, "");
       const isUpdate = danmakuMap.has(key);
-      danmakuMap.set(key, text);
-      textInput.value = "";
+      danmakuMap.set(key, combinedText);
+
+      if (line1El) line1El.value = "";
+      if (line2El) line2El.value = "";
+      if (line3El) line3El.value = "";
+
       renderDanmakuList();
       saveAppState();
       updateResponsiveChartMargins();
       renderFrame(raceData[currentFrameIndex], false);
-      setStatus(isUpdate ? `已更新【${key}】的解说为：“${text}”。` : `已为【${key}】添加解说：“${text}”。`);
+      setStatus(isUpdate ? `已更新【${key}】的解说内容！` : `已为【${key}】添加解说！`);
     }
 
     function removeDanmaku(time) {
@@ -6277,21 +6310,39 @@
     document.querySelector("#aspectRatioModeInput")
       ?.addEventListener("change", updateChartWidth);
 
-    document.querySelector("#dateOpacityInput")
-      ?.addEventListener("input", updateDateOpacity);
+    const dateOpacityEl = document.querySelector("#dateOpacityInput");
+    if (dateOpacityEl) {
+      dateOpacityEl.addEventListener("input", updateDateOpacity);
+      dateOpacityEl.addEventListener("change", () => {
+        updateDateOpacity();
+        saveAppState();
+      });
+    }
 
-    document.querySelector("#dateColorInput")
-      ?.addEventListener("input", e => updateDateColor(e.target.value));
+    const dateColorEl = document.querySelector("#dateColorInput");
+    if (dateColorEl) {
+      dateColorEl.addEventListener("input", e => updateDateColor(e.target.value));
+      dateColorEl.addEventListener("change", e => {
+        updateDateColor(e.target.value);
+        saveAppState();
+      });
+    }
 
-    document.querySelector("#dateColorCodeInput")
-      ?.addEventListener("input", e => updateDateColor(e.target.value));
+    const dateColorCodeEl = document.querySelector("#dateColorCodeInput");
+    if (dateColorCodeEl) {
+      dateColorCodeEl.addEventListener("input", e => updateDateColor(e.target.value));
+      dateColorCodeEl.addEventListener("change", e => {
+        updateDateColor(e.target.value);
+        saveAppState();
+      });
+    }
 
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
-      "valueStepInput", "unitInput", "dateOpacityInput", "dateColorInput", "dateColorCodeInput"
+      "valueStepInput", "unitInput"
     ];
 
     autoSaveInputIds.forEach(id => {
