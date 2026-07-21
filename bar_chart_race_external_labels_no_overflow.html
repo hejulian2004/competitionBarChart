@@ -4013,15 +4013,33 @@
 
       if (!animate) {
         timeLabel.interrupt().text(frame.time);
+        renderDanmakuDOM(danmakuGroup, frame.time, danmakuMap.get(getDanmakuKey(frame.time)));
       } else {
+        const oldTime = timeLabel.node().textContent || frame.time;
+        const targetTime = frame.time;
+
         timeLabel
           .transition(numberTransition)
           .tween("text", function() {
-            const oldTime = this.textContent || frame.time;
-            const targetTime = frame.time;
             return t => {
               // 动画完全结束前，保持旧时间节点，从而保证每个时间节点都有平等的展示时间（包括第一个节点）
               this.textContent = t >= 1 ? targetTime : oldTime;
+            };
+          });
+
+        danmakuGroup
+          .transition(numberTransition)
+          .tween("danmaku", function() {
+            return t => {
+              const activeTime = t >= 1 ? targetTime : oldTime;
+              if (this._activeTime !== activeTime) {
+                this._activeTime = activeTime;
+                renderDanmakuDOM(
+                  d3.select(this),
+                  activeTime,
+                  danmakuMap.get(getDanmakuKey(activeTime))
+                );
+              }
             };
           });
       }
@@ -4484,47 +4502,43 @@
         .style("opacity", 0)
         .remove();
 
-      chartGroup.selectAll("text.rank-label").remove();
+    }
 
-      const frameKey = getDanmakuKey(frame.time);
-      if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
-        const text = danmakuMap.get(frameKey);
-        danmakuGroup.style("display", null);
-        danmakuGroup.selectAll("*").remove();
+    function renderDanmakuDOM(group, time, text) {
+      group.selectAll("*").remove();
+      if (!isDanmakuEnabled() || !text) {
+        group.style("display", "none");
+        return;
+      }
+      group.style("display", null);
 
-        const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
-        const isPortrait = WIDTH < 960;
+      const hasTitle = Boolean(document.querySelector("#titleInput").value.trim());
+      const isPortrait = WIDTH < 960;
+      const startX = (isPortrait || !hasTitle)
+        ? TITLE_LEFT
+        : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - 520);
+      const startY = margin.top - 54;
 
-        const startX = (isPortrait || !hasTitle)
-          ? TITLE_LEFT
-          : Math.max(TITLE_LEFT + 220, WIDTH - CHART_SIDE_PADDING - 520);
+      group.append("text")
+        .attr("x", startX)
+        .attr("y", startY + 16)
+        .attr("font-size", 13)
+        .attr("font-weight", 700)
+        .attr("fill", "#2563eb")
+        .text(`📌 ${getDanmakuKey(time)}`);
 
-        const startY = margin.top - 54;
+      const textEl = group.append("text")
+        .attr("x", startX)
+        .attr("y", startY + 40)
+        .attr("font-size", 18)
+        .attr("font-weight", 800)
+        .attr("fill", "#0f172a")
+        .text(text);
 
-        danmakuGroup.append("text")
-          .attr("x", startX)
-          .attr("y", startY + 16)
-          .attr("font-size", 13)
-          .attr("font-weight", 700)
-          .attr("fill", "#2563eb")
-          .text(`📌 ${frameKey}`);
-
-        const textEl = danmakuGroup.append("text")
-          .attr("x", startX)
-          .attr("y", startY + 40)
-          .attr("font-size", 18)
-          .attr("font-weight", 800)
-          .attr("fill", "#0f172a")
-          .text(text);
-
-        const textWidth = measureLogicalText(text, 18, 800);
-        const maxW = WIDTH - startX - CHART_SIDE_PADDING - 10;
-        if (textWidth > maxW) {
-          textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
-        }
-      } else {
-        danmakuGroup.selectAll("*").remove();
-        danmakuGroup.style("display", "none");
+      const textWidth = measureLogicalText(text, 18, 800);
+      const maxW = WIDTH - startX - CHART_SIDE_PADDING - 10;
+      if (textWidth > maxW) {
+        textEl.attr("textLength", maxW).attr("lengthAdjust", "spacingAndGlyphs");
       }
     }
 
