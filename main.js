@@ -275,8 +275,9 @@
           .attr("width", panel.width)
           .attr("height", HEIGHT);
         xScale.range([margin.left, WIDTH - margin.right]);
-        yScale.range(getYScaleTargetRange(categories.length));
-        zeroLine.attr("y2", getYScaleTargetRange(categories.length)[1]);
+        const barCapacity = typeof getMaxCapacityBarCount === "function" ? getMaxCapacityBarCount() : categories.length;
+        yScale.range(getYScaleTargetRange(barCapacity));
+        zeroLine.attr("y2", getYScaleTargetRange(barCapacity)[1]);
         applyDateLayout();
         layoutSignature = getSignature();
       };

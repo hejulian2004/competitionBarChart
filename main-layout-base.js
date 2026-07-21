@@ -362,7 +362,7 @@
       .attr("width", Math.max(1, WIDTH - CHART_SIDE_PADDING * 2))
       .attr("height", HEIGHT);
     xScale.range([margin.left, WIDTH - margin.right]);
-    yScale.range(getYScaleTargetRange(categories.length));
+    yScale.range(getYScaleTargetRange(typeof getMaxCapacityBarCount === "function" ? getMaxCapacityBarCount() : categories.length));
     syncCaptureAspectRatio();
   }
 

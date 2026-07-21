@@ -2210,9 +2210,25 @@
 
     const MAX_BAR_HEIGHT = 44;
 
+    function getRequestedBarCount() {
+      const el = document.querySelector("#barsInput");
+      const raw = el ? Number(el.value) : 8;
+      return Number.isFinite(raw) && raw >= 0 ? Math.floor(raw) : 8;
+    }
+
+    function getMaxCapacityBarCount() {
+      const requested = getRequestedBarCount();
+      const totalCats = categories && categories.length > 0 ? categories.length : 8;
+      if (requested > 0) {
+        return Math.min(requested, Math.max(1, totalCats));
+      }
+      return Math.max(1, totalCats);
+    }
+
     function getYScaleTargetRange(barCount) {
       const fullAvailableHeight = HEIGHT - margin.top - margin.bottom;
-      const count = Math.max(1, barCount || 1);
+      const capacity = getMaxCapacityBarCount();
+      const count = Math.max(1, capacity);
       const maxStep = MAX_BAR_HEIGHT / 0.84;
       const neededHeight = count * maxStep;
       const targetHeight = Math.min(fullAvailableHeight, neededHeight);
@@ -2757,7 +2773,7 @@
       }
 
       configureXAxisScale([domainMin, domainMax]);
-      yScale.range(getYScaleTargetRange(ranking.length));
+      yScale.range(getYScaleTargetRange(getMaxCapacityBarCount()));
       yScale.domain(ranking.map(d => d.name));
 
       const duration = animate
@@ -4435,9 +4451,10 @@
         context.globalAlpha = 1;
       }
 
+      const capacityCount = getMaxCapacityBarCount();
       const yBand = d3.scaleBand()
-        .domain(ranking.map(item => item.name))
-        .range(getYScaleTargetRange(ranking.length))
+        .domain(categories)
+        .range(getYScaleTargetRange(capacityCount))
         .padding(0.16);
 
       const fromRanks = getAllRankMap(fromFrame);
