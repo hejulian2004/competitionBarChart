@@ -3349,7 +3349,7 @@
 
       group.append("text")
         .attr("x", startX)
-        .attr("y", startY + 16)
+        .attr("y", startY)
         .attr("font-size", 13)
         .attr("font-weight", 700)
         .attr("fill", "#2563eb")
@@ -3357,7 +3357,7 @@
 
       const textEl = group.append("text")
         .attr("x", startX)
-        .attr("y", startY + 40)
+        .attr("y", startY + 24)
         .attr("font-size", 18)
         .attr("font-weight", 800)
         .attr("fill", "#0f172a")
@@ -4819,7 +4819,6 @@
         const startY = margin.top - 54;
 
         context.save();
-        context.textBaseline = "top";
 
         context.fillStyle = "#2563eb";
         context.font = '700 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
@@ -4828,7 +4827,7 @@
         const maxTextW = Math.max(120, WIDTH - startX - CHART_SIDE_PADDING - 10);
         context.fillStyle = "#0f172a";
         context.font = '800 18px "Microsoft YaHei", "PingFang SC", Arial, sans-serif';
-        context.fillText(text, startX, startY + 22, maxTextW);
+        context.fillText(text, startX, startY + 24, maxTextW);
 
         context.restore();
       }
