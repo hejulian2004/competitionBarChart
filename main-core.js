@@ -183,6 +183,26 @@
     const danmakuMap = new Map();
     const danmakuGroup = svg.append("g").attr("class", "danmaku-group");
 
+    function getDateOpacity() {
+      const el = document.querySelector("#dateOpacityInput");
+      const raw = el ? Number(el.value) : 20;
+      const clamped = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 20;
+      return clamped / 100;
+    }
+
+    function updateDateOpacity() {
+      const opacity = getDateOpacity();
+      const label = document.querySelector("#dateOpacityValue");
+      if (label) {
+        label.textContent = `${Math.round(opacity * 100)}%`;
+      }
+      timeLabel.style("opacity", opacity);
+      if (raceData && raceData.length > 0) {
+        renderFrame(raceData[currentFrameIndex], false);
+      }
+      saveAppState();
+    }
+
     function isDanmakuEnabled() {
       const el = document.querySelector("#showDanmakuInput");
       return el ? el.checked : true;
@@ -3358,6 +3378,72 @@
       startPlayback();
     }
 
+    function mergeImportedRows(currentRows, newRows) {
+      const normalizedCurrent = normalizeRows(currentRows);
+      const normalizedNew = normalizeRows(newRows);
+
+      if (normalizedCurrent.length < 2) return normalizedNew;
+      if (normalizedNew.length < 2) return normalizedCurrent;
+
+      const currentHeaders = normalizedCurrent[0].slice(1);
+      const newHeaders = normalizedNew[0].slice(1);
+
+      const allHeaders = ["时间"];
+      currentHeaders.forEach(h => {
+        if (h && !allHeaders.includes(h)) allHeaders.push(h);
+      });
+      newHeaders.forEach(h => {
+        if (h && !allHeaders.includes(h)) allHeaders.push(h);
+      });
+
+      const timeDataMap = new Map();
+
+      normalizedCurrent.slice(1).forEach(row => {
+        const time = String(row[0] ?? "").trim();
+        if (!time) return;
+        const entityMap = new Map();
+        currentHeaders.forEach((name, idx) => {
+          const val = Number(row[idx + 1]);
+          entityMap.set(name, Number.isFinite(val) ? val : 0);
+        });
+        timeDataMap.set(time, entityMap);
+      });
+
+      normalizedNew.slice(1).forEach(row => {
+        const time = String(row[0] ?? "").trim();
+        if (!time) return;
+        if (!timeDataMap.has(time)) {
+          timeDataMap.set(time, new Map());
+        }
+        const entityMap = timeDataMap.get(time);
+        newHeaders.forEach((name, idx) => {
+          const val = Number(row[idx + 1]);
+          entityMap.set(name, Number.isFinite(val) ? val : 0);
+        });
+      });
+
+      const times = Array.from(timeDataMap.keys()).sort((a, b) => {
+        const numA = Number(a);
+        const numB = Number(b);
+        if (Number.isFinite(numA) && Number.isFinite(numB)) {
+          return numA - numB;
+        }
+        return a.localeCompare(b, "zh-CN", { numeric: true });
+      });
+
+      const mergedRows = [allHeaders];
+      times.forEach(time => {
+        const entityMap = timeDataMap.get(time);
+        const row = [time];
+        allHeaders.slice(1).forEach(name => {
+          row.push(entityMap.has(name) ? entityMap.get(name) : 0);
+        });
+        mergedRows.push(row);
+      });
+
+      return mergedRows;
+    }
+
     async function importFile(file) {
       try {
         if (!file) return;
@@ -3385,7 +3471,27 @@
           throw new Error("仅支持 CSV、XLSX 和 XLS 文件。");
         }
 
-        applyRows(importedRows, file.name);
+        let finalRows = importedRows;
+        let isMerged = false;
+
+        if (rows && rows.length > 2 && raceData && raceData.length > 0) {
+          const choice = confirm(
+            `检测到已有图表数据！\n\n` +
+            `点击【确定】：以【覆盖合并】模式导入（覆盖同名主体的数值与时间节点，100%保留已有主体图标与自定义配色）。\n\n` +
+            `点击【取消】：以【全新替换】模式导入（用新表格完全替换现有表格，同名主体仍自动保留图标与配色）。`
+          );
+
+          if (choice) {
+            finalRows = mergeImportedRows(rows, importedRows);
+            isMerged = true;
+          }
+        }
+
+        applyRows(finalRows, file.name);
+
+        if (isMerged) {
+          setStatus(`已完成数据覆盖合并：更新了主体数值与时间节点，完好保留了已配置的主体图标与配色！`);
+        }
       } catch (error) {
         console.error(error);
         setStatus(`导入失败：${error.message}`, true);
@@ -4486,18 +4592,21 @@
       });
 
       // 时间标签
-      context.save();
-      context.globalAlpha = 0.20;
-      context.fillStyle = "#2563eb";
-      context.font =
-        '900 104px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
-      context.textAlign = "right";
-      context.fillText(
-        frame.time,
-        logicalWidth - margin.right - 10,
-        logicalHeight - margin.bottom - 10
-      );
-      context.restore();
+      const dateOpacity = typeof getDateOpacity === "function" ? getDateOpacity() : 0.20;
+      if (dateOpacity > 0.001) {
+        context.save();
+        context.globalAlpha = dateOpacity;
+        context.fillStyle = "#2563eb";
+        context.font =
+          '900 104px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
+        context.textAlign = "right";
+        context.fillText(
+          frame.time,
+          logicalWidth - margin.right - 10,
+          logicalHeight - margin.bottom - 10
+        );
+        context.restore();
+      }
 
       const frameKey = getDanmakuKey(frame.time);
       if (isDanmakuEnabled() && danmakuMap.has(frameKey)) {
@@ -6065,12 +6174,15 @@
     document.querySelector("#aspectRatioModeInput")
       ?.addEventListener("change", updateChartWidth);
 
+    document.querySelector("#dateOpacityInput")
+      ?.addEventListener("input", updateDateOpacity);
+
     const autoSaveInputIds = [
       "titleInput", "subtitleInput", "barsInput", "showZeroInput",
       "enableGradientInput", "showXAxisInput", "showDanmakuInput", "xAxisModeInput", "valueScaleInput",
       "aspectRatioModeInput", "chartWidthScaleInput", "speedInput", "gifFpsInput", "gifCompatibilityInput",
       "videoFormatInput", "videoFpsInput", "videoResolutionInput", "videoCoverFrameInput",
-      "valueStepInput", "unitInput"
+      "valueStepInput", "unitInput", "dateOpacityInput"
     ];
 
     autoSaveInputIds.forEach(id => {

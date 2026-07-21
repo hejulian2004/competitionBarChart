@@ -703,6 +703,9 @@
 
   function drawPixelAlignedDate(context, outputWidth, outputHeight, text) {
     if (!text) return;
+    const opacity = typeof getDateOpacity === "function" ? getDateOpacity() : 0.20;
+    if (opacity <= 0.001) return;
+
     const logical = getDateLayout(text);
     const scaleX = outputWidth / WIDTH;
     const scaleY = outputHeight / HEIGHT;
@@ -710,7 +713,7 @@
 
     context.save();
     context.setTransform(1, 0, 0, 1, 0, 0);
-    context.globalAlpha = 0.20;
+    context.globalAlpha = opacity;
     context.fillStyle = "#2563eb";
     context.font =
       `900 ${Math.max(18, Math.round(logical.fontSize * fontScale))}px ` +
