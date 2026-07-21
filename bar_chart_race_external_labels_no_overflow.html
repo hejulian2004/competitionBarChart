@@ -5035,7 +5035,7 @@
       );
 
       return {
-        time: linearRatio < 0.5 ? fromFrame.time : toFrame.time,
+        time: (toFrame && linearRatio > 0) ? toFrame.time : fromFrame.time,
         values,
         labelValues,
         axisState: interpolateAxisState(
@@ -8174,7 +8174,7 @@
 
   function getTimelineActiveFrame(fromFrame, toFrame, linearProgress) {
     if (!toFrame) return fromFrame;
-    return (Number(linearProgress) || 0) >= 0.82 ? toFrame : fromFrame;
+    return (Number(linearProgress) || 0) > 0 ? toFrame : fromFrame;
   }
 
   function drawPixelAlignedDate(context, outputWidth, outputHeight, text) {
@@ -8877,9 +8877,9 @@
           if (checkbox && enabled) checkbox.checked = true;
         }
 
-        const activeFrame = !toFrame || (Number(linearProgress) || 0) < 0.82
-          ? fromFrame
-          : toFrame;
+        const activeFrame = toFrame && (Number(linearProgress) || 0) > 0
+          ? toFrame
+          : fromFrame;
         drawDate(context, outputWidth, outputHeight, activeFrame?.time);
         if (enabled) {
           drawStableDanmaku(

@@ -583,9 +583,9 @@
           if (checkbox && enabled) checkbox.checked = true;
         }
 
-        const activeFrame = !toFrame || (Number(linearProgress) || 0) < 0.82
-          ? fromFrame
-          : toFrame;
+        const activeFrame = toFrame && (Number(linearProgress) || 0) > 0
+          ? toFrame
+          : fromFrame;
         drawDate(context, outputWidth, outputHeight, activeFrame?.time);
         if (enabled) {
           drawStableDanmaku(

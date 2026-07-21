@@ -3891,7 +3891,7 @@
       );
 
       return {
-        time: linearRatio < 0.5 ? fromFrame.time : toFrame.time,
+        time: (toFrame && linearRatio > 0) ? toFrame.time : fromFrame.time,
         values,
         labelValues,
         axisState: interpolateAxisState(

@@ -698,7 +698,7 @@
 
   function getTimelineActiveFrame(fromFrame, toFrame, linearProgress) {
     if (!toFrame) return fromFrame;
-    return (Number(linearProgress) || 0) >= 0.82 ? toFrame : fromFrame;
+    return (Number(linearProgress) || 0) > 0 ? toFrame : fromFrame;
   }
 
   function drawPixelAlignedDate(context, outputWidth, outputHeight, text) {
