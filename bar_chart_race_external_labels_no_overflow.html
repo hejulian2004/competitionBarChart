@@ -4484,6 +4484,7 @@
           .attr("font-size", fontSize)
           .attr("font-weight", 800)
           .attr("fill", "#0f172a")
+          .attr("xml:space", "preserve")
           .text(lineText);
 
         const textWidth = measureLogicalText(lineText, fontSize, 800);
@@ -8768,7 +8769,8 @@
         const body = danmakuGroup.append("text")
           .attr("font-size", layout.textFontSize)
           .attr("font-weight", 800)
-          .attr("fill", "#0f172a");
+          .attr("fill", "#0f172a")
+          .attr("xml:space", "preserve");
         const lineCount = layout.textLines.length;
         const textBlockH = (lineCount - 1) * layout.lineHeight + layout.textFontSize;
         const startY = Math.round((layout.height - textBlockH) / 2) + layout.textFontSize;
