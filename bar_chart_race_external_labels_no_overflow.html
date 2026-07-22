@@ -65,9 +65,115 @@
       background: linear-gradient(90deg, #2563eb, #7c3aed, #06b6d4);
     }
 
-    .toolbar-grid {
+    .config-toolbar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .config-toolbar-title {
+      font-size: 15px;
+      font-weight: 850;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .config-toggle-all {
+      display: flex;
+      gap: 8px;
+    }
+
+    .config-toggle-all button {
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      cursor: pointer;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      transition: all 150ms ease;
+    }
+
+    .config-toggle-all button:hover {
+      background: #f1f5f9;
+      color: #1d4ed8;
+      border-color: #93c5fd;
+    }
+
+    details.config-group {
+      margin-bottom: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+      overflow: hidden;
+      transition: border-color 200ms ease, box-shadow 200ms ease;
+    }
+
+    details.config-group[open] {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 16px rgba(30, 41, 59, 0.06);
+    }
+
+    details.config-group summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #334155;
+      cursor: pointer;
+      user-select: none;
+      background: rgba(248, 250, 252, 0.75);
+      transition: background 150ms ease;
+      list-style: none;
+    }
+
+    details.config-group summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.config-group summary:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    .summary-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .summary-icon {
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .summary-arrow {
+      font-size: 11px;
+      color: #94a3b8;
+      transition: transform 200ms ease;
+    }
+
+    details.config-group[open] summary .summary-arrow {
+      transform: rotate(180deg);
+    }
+
+    .config-group-content {
+      padding: 14px 16px 16px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .config-grid {
       display: grid;
-      grid-template-columns: 1.4fr 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 14px;
       align-items: end;
     }
@@ -545,12 +651,18 @@
     #chart {
       width: 100%;
       height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
     }
 
-    svg {
+    #previewCanvas {
       display: block;
       width: 100%;
       height: 100%;
+      object-fit: contain;
     }
 
     .chart-title {
@@ -859,218 +971,300 @@
 <body>
   <main class="app">
     <section class="panel toolbar">
-      <div class="toolbar-grid">
-        <div class="field">
-          <label for="fileInput">导入数据（CSV / XLSX / XLS）</label>
-          <input id="fileInput" type="file" accept=".csv,.xlsx,.xls" />
+      <div class="config-toolbar-header">
+        <div class="config-toolbar-title">
+          <span>⚙️ 图表参数配置与定制</span>
         </div>
-
-        <div class="field">
-          <label for="titleInput">图表标题</label>
-          <input id="titleInput" type="text" value="编程语言热度变化" />
+        <div class="config-toggle-all">
+          <button id="expandAllConfigBtn" type="button">展开全部</button>
+          <button id="collapseAllConfigBtn" type="button">折叠全部</button>
         </div>
+      </div>
 
-        <div class="field">
-          <label for="subtitleInput">副标题</label>
-          <input id="subtitleInput" type="text" value="正负混合示例 · 正数向右，负数向左" />
-        </div>
-
-        <div class="field">
-          <label for="barsInput">显示前几名（0 表示全部）</label>
-          <input id="barsInput" type="number" min="0" max="9999" value="8" />
-        </div>
-
-        <div class="field">
-          <label for="maxBarHeightInput">
-            柱体高度上限（粗细）
-            <span id="maxBarHeightValue" class="range-value">52px</span>
-          </label>
-          <input id="maxBarHeightInput" type="range" min="24" max="84" step="2" value="52" />
-        </div>
-
-        <div class="field">
-          <label for="showZeroInput">0 值主体</label>
-          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
-            <input id="showZeroInput" type="checkbox" checked />
-            显示数值为 0 的主体
-          </label>
-        </div>
-
-        <div class="field">
-          <label for="aspectRatioModeInput">画幅方向与比例 (PPT / 横竖屏)</label>
-          <select id="aspectRatioModeInput">
-            <option value="16:9" selected>横屏 16:9 (标准演示 1280×720)</option>
-            <option value="3:4">竖屏 PPT 双栏 3:4 (推荐 PPT 左/右分栏 810×1080)</option>
-            <option value="9:16">竖屏 9:16 (手机/全竖屏 720×1280)</option>
-            <option value="4:5">竖屏 4:5 (精致纵向 864×1080)</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="enableGradientInput">柱体颜色与横轴</label>
-          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;margin-bottom:4px;">
-            <input id="enableGradientInput" type="checkbox" checked />
-            启用柱体渐变色
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
-            <input id="showXAxisInput" type="checkbox" checked />
-            显示横轴与刻度线
-          </label>
-        </div>
-
-        <div class="field">
-          <label for="xAxisModeInput">横轴范围</label>
-          <select id="xAxisModeInput">
-            <option value="non-negative">非负模式（0 固定在最左侧）</option>
-            <option value="smooth-symmetric" selected>平滑动态对称（推荐，0 固定在中央）</option>
-            <option value="smooth-split">平滑动态分侧（0 固定在中央，正负独立）</option>
-            <option value="fixed">固定全局范围</option>
-            <option value="symmetric">以 0 为中心对称固定</option>
-            <option value="dynamic">自由动态（0 可能移动）</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="valueScaleInput">数值尺度</label>
-          <select id="valueScaleInput">
-            <option value="auto" selected>自动（大跨度使用 Symlog）</option>
-            <option value="linear">线性尺度</option>
-            <option value="symlog">Symlog 对称对数尺度</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="speedInput">
-            播放速度
-            <span id="speedValue" class="range-value">1.00×</span>
-          </label>
-          <input id="speedInput" type="range" min="0.1" max="5" step="0.1" value="1" />
-        </div>
-
-        <div class="field">
-          <label for="progressInput">
-            播放进度
-            <span id="progressValue" class="range-value">—</span>
-          </label>
-          <input id="progressInput" type="range" min="0" max="0" step="1" value="0" />
-        </div>
-
-        <div class="field">
-          <label for="gifFpsInput">GIF 导出帧率（1–120 FPS）</label>
-          <input id="gifFpsInput" type="number" min="1" max="120" step="1" value="60" />
-        </div>
-
-        <div class="field">
-          <label for="gifCompatibilityInput">GIF 播放兼容模式</label>
-          <select id="gifCompatibilityInput">
-            <option value="powerpoint" selected>PowerPoint 稳定（有效最高约 30 FPS）</option>
-            <option value="browser">浏览器优先（有效最高约 50 FPS）</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="exportFilenameInput">导出文件名称（不含后缀）</label>
-          <input id="exportFilenameInput" type="text" placeholder="bar-chart-race" value="bar-chart-race" />
-        </div>
-
-        <div class="field">
-          <label for="videoFormatInput">视频导出格式</label>
-          <select id="videoFormatInput">
-            <option value="auto" selected>自动：优先 MP4，失败转 WebM</option>
-            <option value="mp4">MP4（H.264，适合 PowerPoint）</option>
-            <option value="webm">WebM（VP9 / VP8）</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="videoFpsInput">视频导出帧率（1–120 FPS）</label>
-          <input id="videoFpsInput" type="number" min="1" max="120" step="1" value="60" />
-        </div>
-
-        <div class="field">
-          <label for="videoResolutionInput">视频分辨率</label>
-          <select id="videoResolutionInput">
-            <option value="1280x720">1280×720</option>
-            <option value="1920x1080" selected>1920×1080（PPT 推荐）</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="videoCoverFrameInput">视频封面帧（缩略图）</label>
-          <select id="videoCoverFrameInput">
-            <option value="last" selected>最后一帧（推荐：最终结果图）</option>
-            <option value="first">第一帧（初始状态）</option>
-          </select>
-        </div>
-
-        <div class="field">
-          <label for="valueStepInput">数值显示步长（1 表示逐整数）</label>
-          <input id="valueStepInput" type="number" min="0.001" step="0.001" value="1" />
-        </div>
-
-        <div class="field">
-          <label for="unitInput">数值单位（可留空）</label>
-          <input id="unitInput" type="text" placeholder="例如：亿元、票、万人" />
-        </div>
-
-        <div class="field">
-          <label for="dateOpacityInput">
-            年份水印透明度
-            <span id="dateOpacityValue" class="range-value">20%</span>
-          </label>
-          <input id="dateOpacityInput" type="range" min="0" max="100" step="1" value="20" />
-        </div>
-
-        <div class="field">
-          <label for="dateColorInput">年份水印颜色</label>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <input id="dateColorInput" type="color" value="#2563EB" style="width: 44px; height: 34px; padding: 2px; border: 1px solid #cbd5e1; border-radius: 7px; cursor: pointer; background: #ffffff;" />
-            <input id="dateColorCodeInput" class="color-code" type="text" value="#2563EB" placeholder="#RRGGBB" maxLength="7" style="flex: 1; height: 34px;" />
+      <!-- 1. 基础与数据导入 -->
+      <details class="config-group" open>
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">📁</span>
+            <span>基础与数据导入</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div class="config-grid">
+            <div class="field">
+              <label for="fileInput">导入数据（CSV / XLSX / XLS）</label>
+              <input id="fileInput" type="file" accept=".csv,.xlsx,.xls" />
+            </div>
+            <div class="field">
+              <label for="titleInput">图表标题</label>
+              <input id="titleInput" type="text" value="编程语言热度变化" />
+            </div>
+            <div class="field">
+              <label for="subtitleInput">副标题</label>
+              <input id="subtitleInput" type="text" value="正负混合示例 · 正数向右，负数向左" />
+            </div>
           </div>
         </div>
-      </div>
+      </details>
 
-      <div class="color-settings">
-        <div class="color-settings-header">
-          <div class="color-settings-title">主体颜色与图标（点击圆形区域上传图片）</div>
-          <button id="resetColorsButton" type="button">恢复自动配色</button>
+      <!-- 2. 播放与进度控制 -->
+      <details class="config-group" open>
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">▶️</span>
+            <span>播放与进度控制</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div class="config-grid">
+            <div class="field">
+              <label for="speedInput">
+                播放速度
+                <span id="speedValue" class="range-value">1.00×</span>
+              </label>
+              <input id="speedInput" type="range" min="0.1" max="5" step="0.1" value="1" />
+            </div>
+            <div class="field">
+              <label for="progressInput">
+                播放进度
+                <span id="progressValue" class="range-value">—</span>
+              </label>
+              <input id="progressInput" type="range" min="0" max="0" step="1" value="0" />
+            </div>
+          </div>
         </div>
-        <div id="colorControls" class="color-controls"></div>
-      </div>
+      </details>
 
-      <div class="color-settings" style="margin-top: 14px;">
-        <div class="color-settings-header">
-          <div class="color-settings-title">时间节点解说弹幕（支持自定义 1～4 行字幕内容）</div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
-            <input id="showDanmakuInput" type="checkbox" checked />
-            启用解说/弹幕显示
-          </label>
+      <!-- 3. 视觉与画幅外观 -->
+      <details class="config-group" open>
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">🎨</span>
+            <span>视觉与画幅外观</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div class="config-grid">
+            <div class="field">
+              <label for="aspectRatioModeInput">画幅方向与比例 (PPT / 横竖屏)</label>
+              <select id="aspectRatioModeInput">
+                <option value="16:9" selected>横屏 16:9 (标准演示 1280×720)</option>
+                <option value="3:4">竖屏 PPT 双栏 3:4 (推荐 PPT 左/右分栏 810×1080)</option>
+                <option value="9:16">竖屏 9:16 (手机/全竖屏 720×1280)</option>
+                <option value="4:5">竖屏 4:5 (精致纵向 864×1080)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="barsInput">显示前几名（0 表示全部）</label>
+              <input id="barsInput" type="number" min="0" max="9999" value="8" />
+            </div>
+            <div class="field">
+              <label for="maxBarHeightInput">
+                柱体高度上限（粗细）
+                <span id="maxBarHeightValue" class="range-value">52px</span>
+              </label>
+              <input id="maxBarHeightInput" type="range" min="24" max="84" step="2" value="52" />
+            </div>
+            <div class="field">
+              <label for="showZeroInput">0 值主体</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
+                <input id="showZeroInput" type="checkbox" checked />
+                显示数值为 0 的主体
+              </label>
+            </div>
+            <div class="field">
+              <label for="enableGradientInput">柱体渐变</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
+                <input id="enableGradientInput" type="checkbox" checked />
+                启用柱体渐变色
+              </label>
+            </div>
+            <div class="field">
+              <label for="dateOpacityInput">
+                年份水印透明度
+                <span id="dateOpacityValue" class="range-value">20%</span>
+              </label>
+              <input id="dateOpacityInput" type="range" min="0" max="100" step="1" value="20" />
+            </div>
+            <div class="field">
+              <label for="dateColorInput">年份水印颜色</label>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <input id="dateColorInput" type="color" value="#2563EB" style="width: 44px; height: 34px; padding: 2px; border: 1px solid #cbd5e1; border-radius: 7px; cursor: pointer; background: #ffffff;" />
+                <input id="dateColorCodeInput" class="color-code" type="text" value="#2563EB" placeholder="#RRGGBB" maxLength="7" style="flex: 1; height: 34px;" />
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <label for="danmakuTimeSelect" style="font-size: 13px; font-weight: 700; color: #334155; min-width: 65px;">时间节点:</label>
-            <select id="danmakuTimeSelect" style="flex: 1; height: 34px; border-radius: 6px; border: 1px solid #cbd5e1;"></select>
-            <button id="addDanmakuButton" class="primary" type="button" style="padding: 7px 16px; white-space: nowrap;">保存解说</button>
+      </details>
+
+      <!-- 4. 数轴与刻度控制 -->
+      <details class="config-group" open>
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">📊</span>
+            <span>数轴与刻度控制</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div class="config-grid">
+            <div class="field">
+              <label for="showXAxisInput">横轴显示</label>
+              <label style="display:flex;align-items:center;gap:8px;font-weight:600;color:#334155;">
+                <input id="showXAxisInput" type="checkbox" checked />
+                显示横轴与刻度线
+              </label>
+            </div>
+            <div class="field">
+              <label for="xAxisModeInput">横轴范围</label>
+              <select id="xAxisModeInput">
+                <option value="non-negative">非负模式（0 固定在最左侧）</option>
+                <option value="smooth-symmetric" selected>平滑动态对称（推荐，0 固定在中央）</option>
+                <option value="smooth-split">平滑动态分侧（0 固定在中央，正负独立）</option>
+                <option value="fixed">固定全局范围</option>
+                <option value="symmetric">以 0 为中心对称固定</option>
+                <option value="dynamic">自由动态（0 可能移动）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="valueScaleInput">数值尺度</label>
+              <select id="valueScaleInput">
+                <option value="auto" selected>自动（大跨度使用 Symlog）</option>
+                <option value="linear">线性尺度</option>
+                <option value="symlog">Symlog 对称对数尺度</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="valueStepInput">数值显示步长（1 表示逐整数）</label>
+              <input id="valueStepInput" type="number" min="0.001" step="0.001" value="1" />
+            </div>
+            <div class="field">
+              <label for="unitInput">数值单位（可留空）</label>
+              <input id="unitInput" type="text" placeholder="例如：亿元、票、万人" />
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <!-- 5. 主体颜色与图标管理 -->
+      <details class="config-group" open>
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">🏷️</span>
+            <span>主体颜色与图标管理</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div class="color-settings-header" style="margin-bottom: 10px;">
+            <div class="color-settings-title" style="font-size:13px; color:#64748b;">点击圆形区域上传专属 Icon 图标</div>
+            <button id="resetColorsButton" type="button">恢复自动配色</button>
+          </div>
+          <div id="colorControls" class="color-controls"></div>
+        </div>
+      </details>
+
+      <!-- 6. 时间节点解说弹幕 -->
+      <details class="config-group" open>
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">💬</span>
+            <span>时间节点解说弹幕（支持 1～4 行字幕）</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#334155;cursor:pointer;">
+              <input id="showDanmakuInput" type="checkbox" checked />
+              启用解说/弹幕显示
+            </label>
           </div>
           
-          <div style="display: grid; grid-template-columns: 55px 1fr; gap: 6px 10px; align-items: center;">
-            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 1 行:</span>
-            <input id="danmakuLine1Input" type="text" placeholder="第 1 行字幕内容（例如：Python 首次登顶！）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label for="danmakuTimeSelect" style="font-size: 13px; font-weight: 700; color: #334155; min-width: 65px;">时间节点:</label>
+              <select id="danmakuTimeSelect" style="flex: 1; height: 34px; border-radius: 6px; border: 1px solid #cbd5e1;"></select>
+              <button id="addDanmakuButton" class="primary" type="button" style="padding: 7px 16px; white-space: nowrap;">保存解说</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 55px 1fr; gap: 6px 10px; align-items: center;">
+              <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 1 行:</span>
+              <input id="danmakuLine1Input" type="text" placeholder="第 1 行字幕内容（例如：Python 首次登顶！）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 
-            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 2 行:</span>
-            <input id="danmakuLine2Input" type="text" placeholder="第 2 行字幕内容（可选，例如：全网讨论热度翻倍）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 2 行:</span>
+              <input id="danmakuLine2Input" type="text" placeholder="第 2 行字幕内容（可选，例如：全网讨论热度翻倍）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 
-            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 3 行:</span>
-            <input id="danmakuLine3Input" type="text" placeholder="第 3 行字幕内容（可选，例如：大模型应用全面爆发）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 3 行:</span>
+              <input id="danmakuLine3Input" type="text" placeholder="第 3 行字幕内容（可选，例如：大模型应用全面爆发）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
 
-            <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 4 行:</span>
-            <input id="danmakuLine4Input" type="text" placeholder="第 4 行字幕内容（可选，例如：生态建设成果显著）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+              <span style="font-size: 12px; font-weight: 700; color: #475569; text-align: right;">第 4 行:</span>
+              <input id="danmakuLine4Input" type="text" placeholder="第 4 行字幕内容（可选，例如：生态建设成果显著）" style="height: 32px; padding: 4px 8px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+            </div>
+          </div>
+
+          <div id="danmakuList" class="danmaku-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:140px;overflow-y:auto;"></div>
+        </div>
+      </details>
+
+      <!-- 7. 视频与 GIF 导出设置 -->
+      <details class="config-group">
+        <summary>
+          <div class="summary-title-wrap">
+            <span class="summary-icon">🎬</span>
+            <span>视频与 GIF 导出设置</span>
+          </div>
+          <span class="summary-arrow">▼</span>
+        </summary>
+        <div class="config-group-content">
+          <div class="config-grid">
+            <div class="field">
+              <label for="exportFilenameInput">导出文件名称（不含后缀）</label>
+              <input id="exportFilenameInput" type="text" placeholder="bar-chart-race" value="bar-chart-race" />
+            </div>
+            <div class="field">
+              <label for="videoFormatInput">视频导出格式</label>
+              <select id="videoFormatInput">
+                <option value="auto" selected>自动：优先 MP4，失败转 WebM</option>
+                <option value="mp4">MP4（H.264，适合 PowerPoint）</option>
+                <option value="webm">WebM（VP9 / VP8）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="videoFpsInput">视频导出帧率（1–120 FPS）</label>
+              <input id="videoFpsInput" type="number" min="1" max="120" step="1" value="60" />
+            </div>
+            <div class="field">
+              <label for="videoResolutionInput">视频分辨率</label>
+              <select id="videoResolutionInput">
+                <option value="1280x720">1280×720</option>
+                <option value="1920x1080" selected>1920×1080（PPT 推荐）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="videoCoverFrameInput">视频封面帧（缩略图）</label>
+              <select id="videoCoverFrameInput">
+                <option value="last" selected>最后一帧（推荐：最终结果图）</option>
+                <option value="first">第一帧（初始状态）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="gifFpsInput">GIF 导出帧率（1–120 FPS）</label>
+              <input id="gifFpsInput" type="number" min="1" max="120" step="1" value="60" />
+            </div>
+            <div class="field">
+              <label for="gifCompatibilityInput">GIF 播放兼容模式</label>
+              <select id="gifCompatibilityInput">
+                <option value="powerpoint" selected>PowerPoint 稳定（有效最高约 30 FPS）</option>
+                <option value="browser">浏览器优先（有效最高约 50 FPS）</option>
+              </select>
+            </div>
           </div>
         </div>
-
-        <div id="danmakuList" class="danmaku-list" style="display:flex;flex-wrap:wrap;gap:8px;max-height:140px;overflow-y:auto;"></div>
-      </div>
+      </details>
 
       <details class="hint-details">
         <summary>数据格式与使用说明</summary>
@@ -1113,7 +1307,9 @@
           <button id="fullscreenRestartButton" class="primary">重新播放</button>
           <button id="exitFullscreenButton" class="danger">退出全屏</button>
         </div>
-        <div id="chart"></div>
+        <div id="chart">
+          <canvas id="previewCanvas"></canvas>
+        </div>
       </div>
     </section>
 
@@ -1815,11 +2011,19 @@
       );
     }
 
-    function getValueExtents(values) {
+    function getValueExtents(values, frame = null) {
       let minimum = 0;
       let maximum = 0;
 
-      Object.values(values).forEach(rawValue => {
+      let targetValues = values;
+      if (frame && typeof getRanking === "function") {
+        const rankingNames = new Set(getRanking(frame).map(d => d.name));
+        targetValues = Object.fromEntries(
+          Object.entries(values).filter(([name]) => rankingNames.has(name))
+        );
+      }
+
+      Object.values(targetValues).forEach(rawValue => {
         const value = Number(rawValue);
         if (!Number.isFinite(value)) return;
 
@@ -1844,9 +2048,32 @@
       };
     }
 
+    function smoothGlideSeries(series, alpha = 0.10) {
+      if (!series || series.length <= 1) return [...(series || [])];
+      const n = series.length;
+      const fwd = new Array(n);
+      const rev = new Array(n);
+      const res = new Array(n);
+
+      fwd[0] = series[0];
+      for (let i = 1; i < n; i++) {
+        fwd[i] = fwd[i - 1] * (1 - alpha) + series[i] * alpha;
+      }
+
+      rev[n - 1] = series[n - 1];
+      for (let i = n - 2; i >= 0; i--) {
+        rev[i] = rev[i + 1] * (1 - alpha) + series[i] * alpha;
+      }
+
+      for (let i = 0; i < n; i++) {
+        res[i] = fwd[i] * 0.5 + rev[i] * 0.5;
+      }
+      return res;
+    }
+
     function smoothAxisTargetSeries(targets) {
       const minimumMagnitude = getDynamicAxisMinimumMagnitude();
-      return targets.map(target => Math.max(minimumMagnitude, target));
+      return smoothGlideSeries(targets.map(target => Math.max(minimumMagnitude, target)), 0.15);
     }
 
     function updateDynamicAxisTimeline() {
@@ -1854,7 +2081,7 @@
         getDynamicAxisMinimumMagnitude();
 
       const extents = raceData.map(frame =>
-        getValueExtents(frame.values)
+        getValueExtents(frame.values, frame)
       );
 
       const symmetricTargets = extents.map(
@@ -1878,6 +2105,17 @@
         )
       );
 
+      // 提取自由动态下的原始极值（带 14% 适度安全留白）
+      const dynamicMinTargets = extents.map(extent => {
+        const min = extent.minimum;
+        return min < 0 ? min * 1.14 : 0;
+      });
+
+      const dynamicMaxTargets = extents.map(extent => {
+        const max = extent.maximum;
+        return max > 0 ? max * 1.14 : 0;
+      });
+
       const symmetricSeries =
         smoothAxisTargetSeries(symmetricTargets);
 
@@ -1887,6 +2125,10 @@
       const positiveSeries =
         smoothAxisTargetSeries(positiveTargets);
 
+      // 零轴滞后缓动平移：alpha = 0.10 提供极度沉稳流畅的零轴平移行程
+      const dynamicMinSeries = smoothGlideSeries(dynamicMinTargets, 0.10);
+      const dynamicMaxSeries = smoothGlideSeries(dynamicMaxTargets, 0.10);
+
       dynamicAxisTimeline = raceData.map(
         (frame, index) => ({
           symmetricMaximum:
@@ -1894,7 +2136,11 @@
           negativeMagnitude:
             negativeSeries[index],
           positiveMagnitude:
-            positiveSeries[index]
+            positiveSeries[index],
+          dynamicMin:
+            dynamicMinSeries[index],
+          dynamicMax:
+            dynamicMaxSeries[index]
         })
       );
 
@@ -1926,7 +2172,15 @@
           positiveMagnitude:
             getValueExtents(
               fromFrame.values
-            ).positiveMagnitude
+            ).positiveMagnitude,
+          dynamicMin:
+            getValueExtents(fromFrame.values).minimum < 0
+              ? getValueExtents(fromFrame.values).minimum * 1.14
+              : 0,
+          dynamicMax:
+            getValueExtents(fromFrame.values).maximum > 0
+              ? getValueExtents(fromFrame.values).maximum * 1.14
+              : 0
         };
 
       const toState =
@@ -1942,7 +2196,15 @@
           positiveMagnitude:
             getValueExtents(
               toFrame.values
-            ).positiveMagnitude
+            ).positiveMagnitude,
+          dynamicMin:
+            getValueExtents(toFrame.values).minimum < 0
+              ? getValueExtents(toFrame.values).minimum * 1.14
+              : 0,
+          dynamicMax:
+            getValueExtents(toFrame.values).maximum > 0
+              ? getValueExtents(toFrame.values).maximum * 1.14
+              : 0
         };
 
       const currentExtent =
@@ -1972,7 +2234,15 @@
             fromState.positiveMagnitude,
             toState.positiveMagnitude
           )(ratio)
-        )
+        ),
+        dynamicMin: d3.interpolateNumber(
+          fromState.dynamicMin ?? 0,
+          toState.dynamicMin ?? 0
+        )(ratio),
+        dynamicMax: d3.interpolateNumber(
+          fromState.dynamicMax ?? 0,
+          toState.dynamicMax ?? 0
+        )(ratio)
       };
     }
 
@@ -2221,22 +2491,29 @@
         ];
       }
 
-      /*
-       * 旧的自由动态模式：根据当前可见排名直接计算，
-       * 0 刻度可能随最小值和最大值变化而移动。
-       */
-      const numericValues =
-        ranking.map(item => item.value);
-      const rawMin =
-        d3.min(numericValues) ?? 0;
-      const rawMax =
-        d3.max(numericValues) ?? 0;
+      if (mode === "dynamic") {
+        if (frame && frame.axisState && Number.isFinite(frame.axisState.dynamicMin) && Number.isFinite(frame.axisState.dynamicMax)) {
+          return [frame.axisState.dynamicMin, frame.axisState.dynamicMax];
+        }
 
-      return makeNiceDomain(
-        rawMin,
-        rawMax,
-        false
-      );
+        const currentExtent = getValueExtents(
+          frame?.values ||
+          Object.fromEntries(
+            ranking.map(item => [item.name, item.value])
+          ),
+          frame
+        );
+
+        let min = currentExtent.minimum < 0 ? currentExtent.minimum * 1.14 : 0;
+        let max = currentExtent.maximum > 0 ? currentExtent.maximum * 1.14 : 0;
+        if (min === max) { min -= 1; max += 1; }
+        return [min, max];
+      }
+
+      const numericValues = ranking.map(item => item.value);
+      const rawMin = d3.min(numericValues) ?? 0;
+      const rawMax = d3.max(numericValues) ?? 0;
+      return [rawMin < 0 ? rawMin * 1.14 : 0, rawMax > 0 ? rawMax * 1.14 : 0];
     }
 
     function isXAxisFixed() {
@@ -2964,7 +3241,17 @@
       iconImageCache.clear();
       danmakuMap.clear();
 
-      const fileInput = document.querySelector("#fileInput");
+      const fileInput =     document.querySelector("#expandAllConfigBtn")
+      ?.addEventListener("click", () => {
+        document.querySelectorAll("details.config-group").forEach(el => el.open = true);
+      });
+
+    document.querySelector("#collapseAllConfigBtn")
+      ?.addEventListener("click", () => {
+        document.querySelectorAll("details.config-group").forEach(el => el.open = false);
+      });
+
+    document.querySelector("#fileInput");
       if (fileInput) fileInput.value = "";
 
       const emptyRows = [
@@ -3392,7 +3679,7 @@
       );
     }
 
-    function getAdaptiveLabelLayout(
+        function getAdaptiveLabelLayout(
       value,
       barColor,
       valueText,
@@ -3408,23 +3695,21 @@
       );
       const isNegative = value < 0;
 
-      const plotLeft = CHART_SIDE_PADDING + 4;
-      const plotRight =
-        WIDTH - CHART_SIDE_PADDING - 4;
+      // 负数安全防碰撞边界：负数时，图标与数值的左界绝对限制在 margin.left + 6 以内，绝不上移或侵入主体名称区域
+      const plotLeft = isNegative
+        ? (margin.left + 6)
+        : (CHART_SIDE_PADDING + 4);
+      const plotRight = WIDTH - CHART_SIDE_PADDING - 4;
+
+      // 判断负数柱体左侧剩余空间是否足够
+      const rawLeftSpace = isNegative ? (valueX - VALUE_BAR_GAP - plotLeft) : 0;
+      const renderOnRightSideOfValue = isNegative && (rawLeftSpace < 50);
 
       const availableWidth = Math.max(
         1,
         isNegative
-          ? (
-              valueX -
-              VALUE_BAR_GAP -
-              plotLeft
-            )
-          : (
-              plotRight -
-              valueX -
-              VALUE_BAR_GAP
-            )
+          ? (renderOnRightSideOfValue ? Math.max(1, zeroX - valueX - VALUE_BAR_GAP) : rawLeftSpace)
+          : (plotRight - valueX - VALUE_BAR_GAP)
       );
 
       let effectiveIconSize = Math.min(
@@ -3443,97 +3728,63 @@
         )
       );
 
-      let effectiveFontSize =
-        valueFontSize;
+      let effectiveFontSize = valueFontSize;
 
-      let measuredTextWidth =
-        measureLogicalText(
+      let measuredTextWidth = measureLogicalText(
+        valueText,
+        effectiveFontSize,
+        800
+      );
+
+      let maximumTextWidth = Math.max(
+        1,
+        availableWidth - effectiveIconSize - effectiveGap
+      );
+
+      const desiredTotalWidth =
+        measuredTextWidth + effectiveIconSize + effectiveGap;
+
+      if (desiredTotalWidth > availableWidth) {
+        const scaleRatio = availableWidth / desiredTotalWidth;
+
+        effectiveIconSize = Math.max(10, effectiveIconSize * scaleRatio);
+        effectiveGap = Math.max(2, effectiveGap * scaleRatio);
+        effectiveFontSize = Math.max(9, effectiveFontSize * scaleRatio);
+
+        measuredTextWidth = measureLogicalText(
           valueText,
           effectiveFontSize,
           800
         );
 
-      let maximumTextWidth = Math.max(
-        1,
-        availableWidth -
-          effectiveIconSize -
-          effectiveGap
-      );
-
-      const desiredTotalWidth =
-        measuredTextWidth +
-        effectiveIconSize +
-        effectiveGap;
-
-      if (
-        desiredTotalWidth >
-        availableWidth
-      ) {
-        const scaleRatio =
-          availableWidth /
-          desiredTotalWidth;
-
-        effectiveIconSize = Math.max(
-          10,
-          effectiveIconSize *
-            scaleRatio
-        );
-
-        effectiveGap = Math.max(
-          2,
-          effectiveGap *
-            scaleRatio
-        );
-
-        effectiveFontSize = Math.max(
-          9,
-          effectiveFontSize *
-            scaleRatio
-        );
-
-        measuredTextWidth =
-          measureLogicalText(
-            valueText,
-            effectiveFontSize,
-            800
-          );
-
         maximumTextWidth = Math.max(
           1,
-          availableWidth -
-            effectiveIconSize -
-            effectiveGap
+          availableWidth - effectiveIconSize - effectiveGap
         );
       }
 
-      /*
-       * 字体达到下限后仍然过宽时，SVG 使用 textLength，
-       * Canvas 使用 fillText(maxWidth) 做有限水平压缩。
-       */
-      const valueTextCompressed =
-        measuredTextWidth >
-        maximumTextWidth;
-
-      const renderedTextWidth =
-        valueTextCompressed
-          ? maximumTextWidth
-          : measuredTextWidth;
+      const valueTextCompressed = measuredTextWidth > maximumTextWidth;
+      const renderedTextWidth = valueTextCompressed
+        ? maximumTextWidth
+        : measuredTextWidth;
 
       const groupWidth = Math.min(
         availableWidth,
-        effectiveIconSize +
-          effectiveGap +
-          renderedTextWidth
+        effectiveIconSize + effectiveGap + renderedTextWidth
       );
 
       let groupLeft;
 
       if (isNegative) {
-        const groupRight = Math.min(
-          valueX - VALUE_BAR_GAP,
-          plotRight
-        );
-        groupLeft = Math.max(plotLeft, groupRight - groupWidth);
+        if (renderOnRightSideOfValue) {
+          groupLeft = Math.max(plotLeft, valueX + VALUE_BAR_GAP);
+        } else {
+          const groupRight = Math.min(
+            valueX - VALUE_BAR_GAP,
+            plotRight
+          );
+          groupLeft = Math.max(plotLeft, groupRight - groupWidth);
+        }
       } else {
         groupLeft = valueX + VALUE_BAR_GAP;
         if (groupLeft + groupWidth > plotRight) {
@@ -3541,50 +3792,28 @@
         }
       }
 
-      const iconCenterX =
-        groupLeft +
-        effectiveIconSize / 2;
+      const iconCenterX = groupLeft + effectiveIconSize / 2;
+      const valueLabelX = groupLeft + effectiveIconSize + effectiveGap;
 
-      const valueLabelX =
-        groupLeft +
-        effectiveIconSize +
-        effectiveGap;
+      const rankTextWidth = measureLogicalText(
+        rankText,
+        rankFontSize,
+        800
+      );
 
-      const rankTextWidth =
-        measureLogicalText(
-          rankText,
-          rankFontSize,
-          800
-        );
-
-      const canFitRank =
-        barWidth >=
-        rankTextWidth + 20;
+      const canFitRank = barWidth >= rankTextWidth + 20;
 
       let rankLabelX;
       let rankAnchor;
       let rankColor;
 
       if (canFitRank) {
-        rankLabelX = isNegative
-          ? zeroX - 10
-          : zeroX + 10;
-
-        rankAnchor = isNegative
-          ? "end"
-          : "start";
-
-        rankColor =
-          getContrastTextColor(barColor);
+        rankLabelX = isNegative ? zeroX - 10 : zeroX + 10;
+        rankAnchor = isNegative ? "end" : "start";
+        rankColor = getContrastTextColor(barColor);
       } else {
-        rankLabelX = isNegative
-          ? zeroX + 10
-          : zeroX - 10;
-
-        rankAnchor = isNegative
-          ? "start"
-          : "end";
-
+        rankLabelX = isNegative ? zeroX + 10 : zeroX - 10;
+        rankAnchor = isNegative ? "start" : "end";
         rankColor = "#334155";
       }
 
@@ -3601,10 +3830,8 @@
         valueAnchor: "start",
         valueColor: "#263244",
         valueInside: false,
-        valueFontSize:
-          effectiveFontSize,
-        valueTextMaxWidth:
-          maximumTextWidth,
+        valueFontSize: effectiveFontSize,
+        valueTextMaxWidth: maximumTextWidth,
         valueTextCompressed,
         rankLabelX,
         rankAnchor,
@@ -3679,20 +3906,35 @@
       };
     }
 
+    function getStableTickStep() {
+      if (globalValueStats && globalValueStats.maxAbs > 0 && Array.isArray(globalXAxisDomain)) {
+        const span = globalXAxisDomain[1] - globalXAxisDomain[0];
+        if (span > 0) {
+          return d3.tickStep(globalXAxisDomain[0], globalXAxisDomain[1], 8);
+        }
+      }
+      return null;
+    }
+
     function getAxisTickLayout() {
-      const targetTickCount =
-        activeXAxisScaleType === "symlog"
-          ? 18
-          : 12;
-
-      let candidates = xScale
-        .ticks(targetTickCount)
-        .filter(Number.isFinite);
-
       const axisDomain = xScale.domain();
       const domainMin = axisDomain[0];
-      const domainMax =
-        axisDomain[axisDomain.length - 1];
+      const domainMax = axisDomain[axisDomain.length - 1];
+
+      let candidates = [];
+      const stableStep = getStableTickStep();
+
+      if (stableStep && stableStep > 0 && activeXAxisScaleType !== "symlog") {
+        const kMin = Math.floor(domainMin / stableStep) - 2;
+        const kMax = Math.ceil(domainMax / stableStep) + 2;
+        for (let k = kMin; k <= kMax; k++) {
+          const val = Number((k * stableStep).toFixed(8));
+          candidates.push(val);
+        }
+      } else {
+        const targetTickCount = activeXAxisScaleType === "symlog" ? 18 : 12;
+        candidates = xScale.ticks(targetTickCount).filter(Number.isFinite);
+      }
 
       if (
         domainMin <= 0 &&
@@ -4834,211 +5076,11 @@
     }
 
 
-    function sanitizeExportSvg(svgElement) {
-      svgElement.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      svgElement.setAttribute(
-        "xmlns:xlink",
-        "http://www.w3.org/1999/xlink"
-      );
-      svgElement.setAttribute("width", WIDTH);
-      svgElement.setAttribute("height", HEIGHT);
-      svgElement.setAttribute(
-        "viewBox",
-        `0 0 ${WIDTH} ${HEIGHT}`
-      );
-
-      /*
-       * 动画被中断或浏览器仍在计算过渡时，极少数属性可能暂时出现
-       * NaN / Infinity。此类属性会让整个 SVG 无法作为图片加载。
-       */
-      svgElement.querySelectorAll("*").forEach(node => {
-        [...node.attributes].forEach(attribute => {
-          const value = attribute.value;
-
-          if (
-            /(^|[\s,(])-?(?:NaN|Infinity)(?=$|[\s,)])/.test(value) ||
-            value === "undefined"
-          ) {
-            node.removeAttribute(attribute.name);
-          }
-        });
-      });
-
-      return svgElement;
-    }
-
-    function createExportSvgClone() {
-      const clonedSvg = sanitizeExportSvg(
-        svg.node().cloneNode(true)
-      );
-
-      const background = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "rect"
-      );
-      background.setAttribute("width", WIDTH);
-      background.setAttribute("height", HEIGHT);
-      background.setAttribute("fill", "#ffffff");
-      clonedSvg.insertBefore(
-        background,
-        clonedSvg.firstChild
-      );
-
-      const style = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "style"
-      );
-      style.setAttribute("type", "text/css");
-      style.textContent = `
-        text {
-          font-family:
-            "Microsoft YaHei",
-            "PingFang SC",
-            Arial,
-            sans-serif;
-        }
-        .chart-title {
-          font-size: 34px;
-          font-weight: 800;
-          fill: #172033;
-        }
-        .chart-subtitle {
-          font-size: 16px;
-          fill: #64748b;
-        }
-        .axis text {
-          font-size: 14px;
-          fill: #64748b;
-        }
-        .axis line {
-          stroke: #dbe5f0;
-          stroke-dasharray: 3 6;
-        }
-        .axis path {
-          display: none;
-        }
-        .zero-line {
-          stroke: #475569;
-          stroke-width: 2;
-          opacity: 0.88;
-        }
-        .bar-label {
-          font-size: 23px;
-          font-weight: 760;
-          fill: #263244;
-        }
-        .value-label {
-          font-size: 26px;
-          font-weight: 850;
-          fill: #263244;
-        }
-        .time-label {
-          font-size: 104px;
-          font-weight: 900;
-          fill: #2563eb;
-          opacity: 0.075;
-        }
-        .rank-label {
-          font-size: 15px;
-          font-weight: 800;
-        }
-      `;
-      clonedSvg.insertBefore(
-        style,
-        clonedSvg.firstChild
-      );
-
-      return clonedSvg;
-    }
-
-    function serializeExportSvg() {
-      const clonedSvg = createExportSvgClone();
-      const serialized =
-        new XMLSerializer().serializeToString(clonedSvg);
-
-      return (
-        `<?xml version="1.0" encoding="UTF-8"?>` +
-        serialized
-      );
-    }
-
-    function utf8ToBase64(text) {
-      const bytes = new TextEncoder().encode(text);
-      const chunkSize = 0x8000;
-      let binary = "";
-
-      for (
-        let offset = 0;
-        offset < bytes.length;
-        offset += chunkSize
-      ) {
-        const chunk = bytes.subarray(
-          offset,
-          offset + chunkSize
-        );
-
-        binary += String.fromCharCode(...chunk);
-      }
-
-      return btoa(binary);
-    }
-
-    function loadImageFromSource(source) {
-      return new Promise((resolve, reject) => {
-        const image = new Image();
-
-        image.onload = () => resolve(image);
-        image.onerror = () => reject(
-          new Error("图片源加载失败")
-        );
-        image.src = source;
-      });
-    }
-
-    async function loadSerializedSvgImage(serialized) {
-      const attempts = [];
-
-      try {
-        return await loadImageFromSource(
-          `data:image/svg+xml;base64,${utf8ToBase64(serialized)}`
-        );
-      } catch (error) {
-        attempts.push("Base64");
-      }
-
-      try {
-        return await loadImageFromSource(
-          `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`
-        );
-      } catch (error) {
-        attempts.push("URI");
-      }
-
-      const svgBlob = new Blob(
-        [serialized],
-        { type: "image/svg+xml;charset=utf-8" }
-      );
-      const blobUrl = URL.createObjectURL(svgBlob);
-
-      try {
-        return await loadImageFromSource(blobUrl);
-      } catch (error) {
-        attempts.push("Blob");
-        throw new Error(
-          `图表帧渲染失败，已尝试：${attempts.join("、")}。`
-        );
-      } finally {
-        URL.revokeObjectURL(blobUrl);
-      }
-    }
-
     async function captureSvgCanvas(
       targetWidth,
       targetHeight
     ) {
-      const serialized = serializeExportSvg();
-      const image = await loadSerializedSvgImage(serialized);
-
+      await ensureAllIconImagesLoaded();
       const canvas = document.createElement("canvas");
       canvas.width = targetWidth;
       canvas.height = targetHeight;
@@ -5052,19 +5094,15 @@
         throw new Error("浏览器无法创建 Canvas 绘图上下文。");
       }
 
-      context.fillStyle = "#ffffff";
-      context.fillRect(
-        0,
-        0,
+      const currentFrame = raceData[currentFrameIndex] || raceData[0];
+      drawDirectCanvasVideoFrame(
+        context,
         targetWidth,
-        targetHeight
-      );
-      context.drawImage(
-        image,
-        0,
-        0,
-        targetWidth,
-        targetHeight
+        targetHeight,
+        currentFrame,
+        currentFrame,
+        1,
+        1
       );
 
       return canvas;
@@ -5613,15 +5651,35 @@
       }
 
       if (shouldShowXAxis()) {
-        // 横轴、网格和刻度
+        // 横轴、网格和刻度 (支持数轴伸缩滑动时的边缘 Alpha 动态平滑渐入渐出)
         const axisLayout = getAxisTickLayout();
         const ticks = axisLayout.ticks;
 
         context.font =
           '400 14px "Microsoft YaHei","PingFang SC",Arial,sans-serif';
 
+        const chartLeft = margin.left;
+        const chartRight = logicalWidth - margin.right;
+        const fadeMargin = 32;
+
         ticks.forEach(tick => {
           const x = xScale(tick);
+
+          let tickAlpha = 1;
+          if (x < chartLeft) {
+            tickAlpha = 0;
+          } else if (x < chartLeft + fadeMargin) {
+            tickAlpha = (x - chartLeft) / fadeMargin;
+          } else if (x > chartRight) {
+            tickAlpha = 0;
+          } else if (x > chartRight - fadeMargin) {
+            tickAlpha = (chartRight - x) / fadeMargin;
+          }
+
+          if (tickAlpha <= 0.001) return;
+
+          context.save();
+          context.globalAlpha = tickAlpha;
 
           context.beginPath();
           context.strokeStyle = "#dbe5f0";
@@ -5662,6 +5720,7 @@
               margin.top - 17
             );
           }
+          context.restore();
         });
 
         // 稳定零轴
@@ -5702,17 +5761,77 @@
       const toRanks = getAllRankMap(toFrame);
       const fallbackRank = categories.length + 1;
 
-      const interpolatedRank = name => {
-        const startRank =
-          fromRanks.get(name) ?? fallbackRank;
-        const endRank =
-          toRanks.get(name) ?? fallbackRank;
+      function smoothstep(value) {
+      const x = Math.max(0, Math.min(1, value));
+      return x * x * (3 - 2 * x);
+    }
 
-        return d3.interpolateNumber(
-          startRank,
-          endRank
-        )(easedProgress);
-      };
+    function getCrossingRank(name, fromFrame, toFrame, easedProgress, fallbackRank) {
+      if (!fromFrame || !toFrame) return fallbackRank;
+      const fromRanks = getAllRankMap(fromFrame);
+      const toRanks = getAllRankMap(toFrame);
+
+      const startRank = fromRanks.get(name) ?? fallbackRank;
+      const endRank = toRanks.get(name) ?? fallbackRank;
+
+      if (startRank === endRank) {
+        return startRank;
+      }
+
+      const startVal = Number(fromFrame.values?.[name]) || 0;
+      const endVal = Number(toFrame.values?.[name]) || 0;
+
+      let rankOffset = 0;
+      for (const [otherName, otherStartRank] of fromRanks.entries()) {
+        if (otherName === name) continue;
+        const otherEndRank = toRanks.get(otherName) ?? fallbackRank;
+        const otherStartVal = Number(fromFrame.values?.[otherName]) || 0;
+        const otherEndVal = Number(toFrame.values?.[otherName]) || 0;
+
+        const wasAbove = otherStartRank < startRank;
+        const isBelow = otherEndRank > endRank;
+
+        if (wasAbove && isBelow) {
+          const deltaSelf = endVal - startVal;
+          const deltaOther = otherEndVal - otherStartVal;
+          const deltaDiff = deltaSelf - deltaOther;
+
+          let tCross = 0.5;
+          if (Math.abs(deltaDiff) > 1e-6) {
+            tCross = (otherStartVal - startVal) / deltaDiff;
+          }
+          tCross = Math.max(0.15, Math.min(0.85, tCross));
+
+          const transitionWindow = 0.22;
+          const progressInWindow = Math.max(0, Math.min(1, (easedProgress - (tCross - transitionWindow / 2)) / transitionWindow));
+          const blend = smoothstep(progressInWindow);
+
+          rankOffset += (1 - blend) * 1;
+        } else if (!wasAbove && !isBelow && otherStartRank > startRank && otherEndRank < endRank) {
+          const deltaSelf = endVal - startVal;
+          const deltaOther = otherEndVal - otherStartVal;
+          const deltaDiff = deltaOther - deltaSelf;
+
+          let tCross = 0.5;
+          if (Math.abs(deltaDiff) > 1e-6) {
+            tCross = (startVal - otherStartVal) / deltaDiff;
+          }
+          tCross = Math.max(0.15, Math.min(0.85, tCross));
+
+          const transitionWindow = 0.22;
+          const progressInWindow = Math.max(0, Math.min(1, (easedProgress - (tCross - transitionWindow / 2)) / transitionWindow));
+          const blend = smoothstep(progressInWindow);
+
+          rankOffset -= (1 - blend) * 1;
+        }
+      }
+
+      return endRank + rankOffset;
+    }
+
+    const interpolatedRank = name => {
+      return getCrossingRank(name, fromFrame, toFrame, easedProgress, fallbackRank);
+    };
 
       const maxBarCount = Math.max(fromRanking.length, toRanking.length);
       const nameFontSize =
@@ -7597,21 +7716,16 @@
       ?.addEventListener("click", addDanmaku);
 
     document.querySelector("#danmakuTimeSelect")
-      ?.addEventListener("change", (e) => {
-        const time = e.target.value;
-        const textInput = document.querySelector("#danmakuTextInput");
-        if (danmakuMap.has(time)) {
-          if (textInput) textInput.value = danmakuMap.get(time);
-        } else {
-          if (textInput) textInput.value = "";
-        }
+      ?.addEventListener("change", () => {
         updateDanmakuFormState();
       });
 
-    document.querySelector("#danmakuTextInput")
-      ?.addEventListener("keydown", event => {
-        if (event.key === "Enter") addDanmaku();
-      });
+    [1, 2, 3, 4].forEach(i => {
+      document.querySelector(`#danmakuLine${i}Input`)
+        ?.addEventListener("keydown", event => {
+          if (event.key === "Enter") addDanmaku();
+        });
+    });
 
     document.querySelector("#showDanmakuInput")
       ?.addEventListener("change", event => {
@@ -8402,8 +8516,10 @@
     ?.addEventListener("input", clearDanmakuCache);
   document.querySelector("#subtitleInput")
     ?.addEventListener("input", clearDanmakuCache);
-  document.querySelector("#danmakuTextInput")
-    ?.addEventListener("input", clearDanmakuCache);
+  [1, 2, 3, 4].forEach(i => {
+    document.querySelector(`#danmakuLine${i}Input`)
+      ?.addEventListener("input", clearDanmakuCache);
+  });
 
   if (document.fonts?.ready) {
     document.fonts.ready.then(clearDanmakuCache).catch(() => {});
@@ -8578,7 +8694,7 @@
         const textLines = getDanmakuTextLines(
           text,
           adjustedMetrics,
-          lineCount
+        lineCount
         );
 
         const SHRINK = 2/3;
@@ -8671,24 +8787,7 @@
         ].join("|");
       }
 
-      function applyDateLayout(text = timeLabel.text()) {
-        const layout = getDateLayout(text);
-        timeLabel
-          .attr("x", layout.x)
-          .attr("y", layout.y)
-          .attr("text-anchor", "end")
-          .style("font-size", `${layout.fontSize}px`)
-          .attr("textLength", null)
-          .attr("lengthAdjust", null);
-        if (
-          measureLogicalText(String(text), layout.fontSize, 900) >
-          layout.maximumWidth
-        ) {
-          timeLabel
-            .attr("textLength", layout.maximumWidth)
-            .attr("lengthAdjust", "spacingAndGlyphs");
-        }
-      }
+
 
       getYScaleTargetRange = function integratedYRange(barCount) {
         const aspectMode = document.querySelector("#aspectRatioModeInput")?.value || "16:9";
@@ -8715,20 +8814,6 @@
         }
 
         const panel = getPanelBounds();
-        plotSurface
-          .attr("x", panel.left)
-          .attr("y", panel.top)
-          .attr("width", panel.width)
-          .attr("height", panel.height);
-        valueLabelClipRect
-          .attr("x", panel.left)
-          .attr("width", panel.width)
-          .attr("height", HEIGHT);
-        xScale.range([margin.left, WIDTH - margin.right]);
-        const barCapacity = typeof getMaxCapacityBarCount === "function" ? getMaxCapacityBarCount() : categories.length;
-        yScale.range(getYScaleTargetRange(barCapacity));
-        zeroLine.attr("y2", getYScaleTargetRange(barCapacity)[1]);
-        applyDateLayout();
         layoutSignature = getSignature();
       };
 
@@ -8747,53 +8832,88 @@
           : null;
       }
 
-      function renderSvgDanmaku(frame) {
-        danmakuGroup.selectAll("*").remove();
-        const entry = getEntry(frame);
-        if (!entry) {
-          danmakuGroup.style("display", "none");
-          return;
-        }
-
-        const layout = getDanmakuLayout(entry.key, entry.text);
-        danmakuGroup.style("display", null);
-        danmakuGroup.append("rect")
-          .attr("x", layout.x)
-          .attr("y", layout.y)
-          .attr("width", layout.width)
-          .attr("height", layout.height)
-          .attr("rx", layout.radius)
-          .attr("fill", "#eff6ff")
-          .attr("stroke", "#dbeafe");
-
-        const body = danmakuGroup.append("text")
-          .attr("font-size", layout.textFontSize)
-          .attr("font-weight", 800)
-          .attr("fill", "#0f172a")
-          .attr("xml:space", "preserve");
-        const lineCount = layout.textLines.length;
-        const textBlockH = (lineCount - 1) * layout.lineHeight + layout.textFontSize;
-        const startY = Math.round((layout.height - textBlockH) / 2) + layout.textFontSize;
-        layout.textLines.forEach((line, index) => {
-          body.append("tspan")
-            .attr("x", layout.x + layout.padding)
-            .attr("y", layout.y + startY + index * layout.lineHeight)
-            .text(line);
-        });
-      }
+      let activePreviewAnim = null;
 
       renderFrame = function integratedRenderFrame(frame, animate = true) {
         ensureLayout();
-        const checkbox = document.querySelector("#showDanmakuInput");
-        const enabled = checkbox ? checkbox.checked : true;
-        if (checkbox && enabled) checkbox.checked = false;
-        try {
-          core.renderFrame(frame, animate);
-        } finally {
-          if (checkbox && enabled) checkbox.checked = true;
+        if (!frame) return;
+
+        const dataFrameIndex = raceData.indexOf(frame);
+        if (dataFrameIndex >= 0) {
+          syncProgress(dataFrameIndex);
         }
-        applyDateLayout(frame?.time || "");
-        renderSvgDanmaku(frame);
+
+        let previewCanvas = document.querySelector("#previewCanvas");
+        if (!previewCanvas) {
+          const chartContainer = document.querySelector("#chart");
+          if (!chartContainer) return;
+          chartContainer.innerHTML = "";
+          previewCanvas = document.createElement("canvas");
+          previewCanvas.id = "previewCanvas";
+          previewCanvas.style.display = "block";
+          previewCanvas.style.width = "100%";
+          previewCanvas.style.height = "100%";
+          chartContainer.appendChild(previewCanvas);
+        }
+
+        const dpr = window.devicePixelRatio || 1;
+        const rect = previewCanvas.getBoundingClientRect();
+        const outputWidth = Math.max(100, Math.round((rect.width || WIDTH) * dpr));
+        const outputHeight = Math.max(100, Math.round((rect.height || HEIGHT) * dpr));
+
+        if (previewCanvas.width !== outputWidth || previewCanvas.height !== outputHeight) {
+          previewCanvas.width = outputWidth;
+          previewCanvas.height = outputHeight;
+        }
+
+        const context = previewCanvas.getContext("2d");
+        const fromFrame = (dataFrameIndex > 0) ? raceData[dataFrameIndex - 1] : frame;
+        const toFrame = frame;
+
+        if (activePreviewAnim) {
+          cancelAnimationFrame(activePreviewAnim);
+          activePreviewAnim = null;
+        }
+
+        if (!animate) {
+          drawDirectCanvasVideoFrame(
+            context,
+            outputWidth,
+            outputHeight,
+            toFrame,
+            toFrame,
+            1,
+            1
+          );
+          return;
+        }
+
+        const duration = Math.max(120, getMotionDuration());
+        const startTime = performance.now();
+
+        function stepAnim(now) {
+          const elapsed = now - startTime;
+          const linearProgress = Math.min(1, elapsed / duration);
+          const easedProgress = MOTION_EASING(linearProgress);
+
+          drawDirectCanvasVideoFrame(
+            context,
+            outputWidth,
+            outputHeight,
+            fromFrame,
+            toFrame,
+            easedProgress,
+            linearProgress
+          );
+
+          if (linearProgress < 1) {
+            activePreviewAnim = requestAnimationFrame(stepAnim);
+          } else {
+            activePreviewAnim = null;
+          }
+        }
+
+        activePreviewAnim = requestAnimationFrame(stepAnim);
       };
 
       function roundedPath(context, x, y, width, height, radius) {
@@ -9037,11 +9157,13 @@
           layoutSignature = "";
           contentCache.clear();
         });
-      document.querySelector("#danmakuTextInput")
-        ?.addEventListener("input", () => {
-          layoutSignature = "";
-          contentCache.clear();
-        });
+      [1, 2, 3, 4].forEach(i => {
+        document.querySelector(`#danmakuLine${i}Input`)
+          ?.addEventListener("input", () => {
+            layoutSignature = "";
+            contentCache.clear();
+          });
+      });
 
       layoutSignature = "";
       updateResponsiveChartMargins();
