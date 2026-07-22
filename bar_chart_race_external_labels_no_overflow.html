@@ -1553,7 +1553,7 @@
 
         const textSpan = document.createElement("span");
         textSpan.className = "danmaku-text";
-        const lines = String(text ?? "").split("\n").map(l => l.trim()).filter(Boolean);
+        const lines = String(text ?? "").split("\n").filter(Boolean);
         if (lines.length > 1) {
           textSpan.textContent = `${lines[0]} [共 ${lines.length} 行]`;
         } else {
@@ -1596,12 +1596,12 @@
       if (!timeSelect) return;
 
       const key = getDanmakuKey(timeSelect.value);
-      const l1 = line1El ? line1El.value.trim() : "";
-      const l2 = line2El ? line2El.value.trim() : "";
-      const l3 = line3El ? line3El.value.trim() : "";
-      const l4 = line4El ? line4El.value.trim() : "";
+      const l1 = line1El ? line1El.value : "";
+      const l2 = line2El ? line2El.value : "";
+      const l3 = line3El ? line3El.value : "";
+      const l4 = line4El ? line4El.value : "";
 
-      if (!key || (!l1 && !l2 && !l3 && !l4)) {
+      if (!key || (!l1.trim() && !l2.trim() && !l3.trim() && !l4.trim())) {
         setStatus("请选择时间节点并至少输入一行解说文字！", true);
         return;
       }
@@ -4400,7 +4400,7 @@
 
     function getDanmakuCardLayout(text) {
       if (!isDanmakuEnabled() || !text) return null;
-      const lines = String(text).split("\n").map(s => s.trim()).filter(Boolean);
+      const lines = String(text).split("\n").filter(l => l !== "");
       if (lines.length === 0) return null;
 
       const hasTitle = Boolean(document.querySelector("#titleInput")?.value.trim());
@@ -8453,8 +8453,9 @@
       }
 
       function wrapText(text, maximumWidth, fontSize, maximumLines = MAX_LINES) {
-        const characters = Array.from(String(text ?? "").trim());
-        if (characters.length === 0) return [];
+        const raw = String(text ?? "");
+        if (!raw.trim()) return [];
+        const characters = Array.from(raw);
 
         const lines = [];
         let current = "";
@@ -8493,19 +8494,18 @@
       }
 
       function getDanmakuTextLines(text, metrics, maxLines = MAX_LINES) {
-        const rawText = String(text ?? "").trim();
-        if (!rawText) return [];
+        const rawText = String(text ?? "");
+        if (!rawText.trim()) return [];
 
         if (rawText.includes("\n")) {
           const parts = rawText.split("\n");
-          while (parts.length > 0 && parts[parts.length - 1].trim() === "") {
+          while (parts.length > 0 && parts[parts.length - 1] === "") {
             parts.pop();
           }
           const lines = parts.slice(0, maxLines).map(line => {
-            const trimmed = line.trim();
-            if (!trimmed) return "";
-            const wrapped = wrapText(trimmed, metrics.textWidth, metrics.textFontSize, 1);
-            return wrapped[0] || trimmed;
+            if (line === "") return "";
+            const wrapped = wrapText(line, metrics.textWidth, metrics.textFontSize, 1);
+            return wrapped[0] || line;
           });
           return lines;
         }
